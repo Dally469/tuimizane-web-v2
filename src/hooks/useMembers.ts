@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { memberService } from '@/services';
 import {
   ApiResponse,
@@ -7,12 +8,15 @@ import {
   AssignCardRequest,
   UploadResultDTO,
   MemberContributionResponseDTO,
+  TopDefaulterDTO,
 } from '@/types/api';
 
 interface UseMembersReturn {
   members: MemberDTO[];
   currentMember: Member | null;
+  memberDetail: TopDefaulterDTO | null;
   memberContributions: MemberContributionResponseDTO[];
+  memberHistory: { totalContributions: number; totalAmount: number; contributions: any[] };
   uploadResult: UploadResultDTO | null;
   isLoading: boolean;
   isUploading: boolean;
@@ -20,6 +24,7 @@ interface UseMembersReturn {
   error: string | null;
   fetchMembers: () => Promise<void>;
   getMemberById: (id: string) => Promise<Member | null>;
+  getMemberDetail: (id: string) => Promise<TopDefaulterDTO | null>;
   createMember: (member: Partial<Member>, months: number) => Promise<Member | null>;
   updateMember: (id: string, memberDetails: Partial<Member>) => Promise<Member | null>;
   deleteMember: (id: string) => Promise<boolean>;
@@ -29,6 +34,7 @@ interface UseMembersReturn {
   unassignCard: (memberId: string) => Promise<boolean>;
   findMemberByCard: (cardNumber: string) => Promise<Member | null>;
   getMemberContributions: (memberId: string) => Promise<void>;
+  getMemberHistory: (memberId: string, startDate?: string, endDate?: string) => Promise<void>;
   searchMembers: (query: string, filters?: any) => Promise<MemberDTO[]>;
   clearError: () => void;
 }
@@ -36,7 +42,9 @@ interface UseMembersReturn {
 export const useMembers = (): UseMembersReturn => {
   const [members, setMembers] = useState<MemberDTO[]>([]);
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
+  const [memberDetail, setMemberDetail] = useState<TopDefaulterDTO | null>(null);
   const [memberContributions, setMemberContributions] = useState<MemberContributionResponseDTO[]>([]);
+  const [memberHistory, setMemberHistory] = useState<{ totalContributions: number; totalAmount: number; contributions: any[] }>({ totalContributions: 0, totalAmount: 0, contributions: [] });
   const [uploadResult, setUploadResult] = useState<UploadResultDTO | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -54,14 +62,16 @@ export const useMembers = (): UseMembersReturn => {
     try {
       const response = await memberService.getAllMembers();
       
-      if (response.success && response.data) {
-        setMembers(response.data);
+      if (response.success) {
+        setMembers(Array.isArray(response.data) ? response.data : []);
       } else {
         setError(response.message || 'Failed to fetch members');
+        setMembers([]);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to fetch members';
       setError(errorMessage);
+      setMembers([]);
     } finally {
       setIsLoading(false);
     }
@@ -90,6 +100,31 @@ export const useMembers = (): UseMembersReturn => {
     }
   }, []);
 
+  const getMemberDetail = useCallback(async (id: string): Promise<TopDefaulterDTO | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await memberService.getMemberDetail(id);
+      let payload = response.data;
+      if (payload && typeof payload === 'object' && 'data' in (payload as any)) {
+        payload = (payload as any).data;
+      }
+      if (response.success && payload) {
+        setMemberDetail(payload as TopDefaulterDTO);
+        return payload as TopDefaulterDTO;
+      } else {
+        setError(response.message || 'Failed to fetch member detail');
+        return null;
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch member detail');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const createMember = useCallback(async (
     member: Partial<Member>,
     months: number
@@ -102,14 +137,18 @@ export const useMembers = (): UseMembersReturn => {
       
       if (response.success && response.data) {
         await fetchMembers(); // Refresh members list
+        toast.success('Member created successfully');
         return response.data;
       } else {
-        setError(response.message || 'Failed to create member');
+        const errorMessage = response.message || 'Failed to create member';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return null;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to create member';
       setError(errorMessage);
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -129,14 +168,18 @@ export const useMembers = (): UseMembersReturn => {
       if (response.success && response.data) {
         await fetchMembers(); // Refresh members list
         setCurrentMember(response.data);
+        toast.success('Member updated successfully');
         return response.data;
       } else {
-        setError(response.message || 'Failed to update member');
+        const errorMessage = response.message || 'Failed to update member';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return null;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to update member';
       setError(errorMessage);
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -152,14 +195,18 @@ export const useMembers = (): UseMembersReturn => {
       
       if (response.success) {
         await fetchMembers(); // Refresh members list
+        toast.success('Member deleted successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to delete member');
+        const errorMessage = response.message || 'Failed to delete member';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to delete member';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -178,14 +225,18 @@ export const useMembers = (): UseMembersReturn => {
       
       if (response.success) {
         await fetchMembers(); // Refresh members list
+        toast.success('Member status changed successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to change member status');
+        const errorMessage = response.message || 'Failed to change member status';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to change member status';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -206,14 +257,18 @@ export const useMembers = (): UseMembersReturn => {
       if (response.success && response.data) {
         setUploadResult(response.data);
         await fetchMembers(); // Refresh members list
+        toast.success('Members uploaded successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to upload members');
+        const errorMessage = response.message || 'Failed to upload members';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to upload members';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsUploading(false);
@@ -233,14 +288,18 @@ export const useMembers = (): UseMembersReturn => {
       
       if (response.success) {
         await fetchMembers(); // Refresh members list
+        toast.success('Card assigned successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to assign card');
+        const errorMessage = response.message || 'Failed to assign card';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to assign card';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -256,14 +315,18 @@ export const useMembers = (): UseMembersReturn => {
       
       if (response.success) {
         await fetchMembers(); // Refresh members list
+        toast.success('Card unassigned successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to unassign card');
+        const errorMessage = response.message || 'Failed to unassign card';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to unassign card';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -313,6 +376,38 @@ export const useMembers = (): UseMembersReturn => {
     }
   }, []);
 
+  const getMemberHistory = useCallback(async (
+    memberId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await memberService.getMemberHistory(memberId, startDate, endDate);
+      let payload = response.data;
+      // unwrap nested envelope if present
+      if (payload && typeof payload === 'object' && 'data' in payload) {
+        payload = (payload as any).data;
+      }
+      if (payload && typeof payload === 'object' && 'contributions' in payload) {
+        setMemberHistory({
+          totalContributions: payload.totalContributions || 0,
+          totalAmount: payload.totalAmount || 0,
+          contributions: Array.isArray(payload.contributions) ? payload.contributions : [],
+        });
+      } else {
+        setMemberHistory({ totalContributions: 0, totalAmount: 0, contributions: Array.isArray(payload) ? payload : [] });
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch member history');
+      setMemberHistory({ totalContributions: 0, totalAmount: 0, contributions: [] });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const searchMembers = useCallback(async (
     query: string,
     filters?: any
@@ -341,7 +436,9 @@ export const useMembers = (): UseMembersReturn => {
   return {
     members,
     currentMember,
+    memberDetail,
     memberContributions,
+    memberHistory,
     uploadResult,
     isLoading,
     isUploading,
@@ -349,6 +446,7 @@ export const useMembers = (): UseMembersReturn => {
     error,
     fetchMembers,
     getMemberById,
+    getMemberDetail,
     createMember,
     updateMember,
     deleteMember,
@@ -358,6 +456,7 @@ export const useMembers = (): UseMembersReturn => {
     unassignCard,
     findMemberByCard,
     getMemberContributions,
+    getMemberHistory,
     searchMembers,
     clearError,
   };

@@ -24,15 +24,15 @@ export const Select: React.FC<SelectProps> = ({
   ...props
 }) => {
   const baseClasses =
-    'block h-12 w-full rounded-2xl border border-white/60 bg-white/80 px-4 text-sm text-ink-900 shadow-soft backdrop-blur transition duration-300 focus:border-accent-300 focus:bg-white focus:ring-4 focus:ring-accent-100';
+    'block h-12 w-full rounded-2xl border border-white/60 bg-white/80 px-4 text-sm text-ink-900 shadow-soft backdrop-blur transition duration-300 focus:border-accent-300 focus:bg-white focus:ring-4 focus:ring-accent-100 disabled:cursor-not-allowed disabled:opacity-60';
   const errorClasses = error ? 'border-danger-300 focus:border-danger-400 focus:ring-danger-100' : '';
 
   const classes = clsx(baseClasses, errorClasses, className);
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-2">
       {label && (
-        <label htmlFor={props.id} className="mb-2 block text-sm font-semibold tracking-tight text-ink-800">
+        <label htmlFor={props.id} className="block text-sm font-semibold tracking-tight text-ink-800">
           {label}
         </label>
       )}
@@ -48,8 +48,8 @@ export const Select: React.FC<SelectProps> = ({
           </option>
         ))}
       </select>
-      {error && <p className="mt-2 text-sm text-danger-600">{error}</p>}
-      {helperText && !error && <p className="mt-2 text-sm text-ink-500">{helperText}</p>}
+      {error && <p className="text-sm text-danger-600">{error}</p>}
+      {helperText && !error && <p className="text-sm text-ink-500">{helperText}</p>}
     </div>
   );
 };

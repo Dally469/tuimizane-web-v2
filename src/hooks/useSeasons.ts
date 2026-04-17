@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { seasonService } from '@/services';
 import {
   ApiResponse,
@@ -72,14 +73,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success && response.data) {
         await fetchSeasons(); // Refresh seasons list
+        toast.success('Season created successfully');
         return response.data;
       } else {
-        setError(response.message || 'Failed to create season');
+        const errorMessage = response.message || 'Failed to create season';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return null;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to create season';
       setError(errorMessage);
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -97,14 +102,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success && response.data) {
         await fetchSeasons(); // Refresh seasons list
+        toast.success('Season created with members successfully');
         return response.data;
       } else {
-        setError(response.message || 'Failed to create season with members');
+        const errorMessage = response.message || 'Failed to create season with members';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return null;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to create season with members';
       setError(errorMessage);
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -123,14 +132,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success && response.data) {
         await fetchSeasons(); // Refresh seasons list
+        toast.success('Season updated successfully');
         return response.data;
       } else {
-        setError(response.message || 'Failed to update season');
+        const errorMessage = response.message || 'Failed to update season';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return null;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to update season';
       setError(errorMessage);
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -146,14 +159,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success) {
         await fetchSeasons(); // Refresh seasons list
+        toast.success('Season deleted successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to delete season');
+        const errorMessage = response.message || 'Failed to delete season';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to delete season';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -169,14 +186,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success) {
         await fetchSeasons(); // Refresh seasons list
+        toast.success('Season ended successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to end season');
+        const errorMessage = response.message || 'Failed to end season';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to end season';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -215,14 +236,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success) {
         await fetchSeasonMembers(seasonId); // Refresh members list
+        toast.success('Members added to season successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to add members to season');
+        const errorMessage = response.message || 'Failed to add members to season';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to add members to season';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -241,14 +266,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success) {
         await fetchSeasonMembers(seasonId); // Refresh members list
+        toast.success('Top three members set successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to set top three members');
+        const errorMessage = response.message || 'Failed to set top three members';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to set top three members';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -264,14 +293,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success) {
         await fetchSeasonMembers(seasonId); // Refresh members list
+        toast.success('Rankings recalculated successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to recalculate rankings');
+        const errorMessage = response.message || 'Failed to recalculate rankings';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to recalculate rankings';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -290,14 +323,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success) {
         await fetchSeasonMembers(seasonId); // Refresh members list
+        toast.success('Member removed from season');
         return true;
       } else {
-        setError(response.message || 'Failed to remove member from season');
+        const errorMessage = response.message || 'Failed to remove member from season';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to remove member from season';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -316,14 +353,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success) {
         await fetchSeasonMembers(seasonId); // Refresh members list
+        toast.success('Members removed from season');
         return true;
       } else {
-        setError(response.message || 'Failed to remove members from season');
+        const errorMessage = response.message || 'Failed to remove members from season';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to remove members from season';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -339,14 +380,18 @@ export const useSeasons = (): UseSeasonsReturn => {
       
       if (response.success) {
         await fetchSeasonMembers(seasonId); // Refresh members list
+        toast.success('Unpaid members removed successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to remove unpaid members');
+        const errorMessage = response.message || 'Failed to remove unpaid members';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to remove unpaid members';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);

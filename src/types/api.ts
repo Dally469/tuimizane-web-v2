@@ -3,6 +3,7 @@ export interface ApiResponse<T = any> {
   status: number;
   success: boolean;
   message: string;
+  token?: string;
   data?: T;
 }
 
@@ -13,12 +14,15 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
-  user: {
-    id: string;
-    username: string;
-    organizationId: string;
-  };
+  id: string;
+  username: string;
+  password?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: string;
+  organization?: Organization;
 }
 
 export interface ChangePasswordRequest {
@@ -129,8 +133,7 @@ export interface SeasonRequest {
 }
 
 export interface SeasonCreationRequestDTO {
-  startDate: string;
-  endDate: string;
+  months: number;
   status: string;
   createdBy: string;
   memberIds: string[];
@@ -170,11 +173,12 @@ export interface MemberRankingDTO {
   memberStartDate?: string;
   ranking: number;
   isTopThree: boolean;
-  topThreePriority?: number;
+  topThreePriority?: number | null;
   paymentStatus: 'PENDING' | 'PAID' | 'SKIPPED';
-  paidAt?: string;
-  amountPaid?: number;
-  paymentReference?: string;
+  paidAt?: string | null;
+  amountPaid?: number | null;
+  paymentReference?: string | null;
+  topThree?: boolean;
 }
 
 // Payment Types
@@ -218,6 +222,17 @@ export interface MemberPayoutDTO {
   currency?: string;
 }
 
+export interface MemberHistoryPayoutDTO {
+  id: string;
+  weekNumber: number;
+  expectedPayoutDate: string;
+  memberNames: string;
+  memberPhone: string;
+  status: 'SCHEDULED' | 'PAID' | 'CANCELLED' | 'PENDING';
+  amount?: number;
+  currency?: string;
+}
+
 export interface SeasonStatusDTO {
   seasonId: string;
   startDate: string;
@@ -237,15 +252,34 @@ export interface SeasonStatusDTO {
 }
 
 // Contribution Types
+export interface CreateContributionRequest {
+  member: { id: string };
+  season?: { id: string };
+  amount: number;
+  debitAmount: number;
+  days: number;
+  currency: string;
+  createdBy: string;
+  status: string;
+}
+
 export interface Contribution {
   id: string;
   memberId: string;
+  memberNames?: string;
   amount: number;
+  debitAmount?: number;
+  days?: number;
   currency: string;
   contributionDate: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'RESET';
+  statusOperator?: string;
+  statusTime?: string;
+  statusComment?: string;
   paymentMethod?: string;
   referenceNumber?: string;
+  seasonId?: string;
+  organizationId?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -253,12 +287,20 @@ export interface Contribution {
 export interface ContributionDTO {
   id: string;
   memberId: string;
+  memberNames?: string;
   amount: number;
+  debitAmount?: number;
+  days?: number;
   currency: string;
   contributionDate: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'RESET';
+  statusOperator?: string;
+  statusTime?: string;
+  statusComment?: string;
   paymentMethod?: string;
   referenceNumber?: string;
+  seasonId?: string;
+  createdAt?: string;
 }
 
 export interface MemberContributionResponseDTO {
@@ -266,20 +308,58 @@ export interface MemberContributionResponseDTO {
   memberId: string;
   memberNames: string;
   amount: number;
+  debitAmount?: number;
   currency: string;
   contributionDate: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'RESET';
   paymentMethod?: string;
   referenceNumber?: string;
   createdAt: string;
 }
 
 export interface ContributionSummaryDTO {
-  totalContributions: number;
+  summary: {
+    totalContributions: number;
+    totalAmount: number;
+    averageContribution: number;
+    totalDebitAmount: number;
+    membersWithDebit: number;
+    uniqueMembers: number;
+    uniqueDays: number;
+  };
+  filters: {
+    organizationId: string;
+    seasonId?: string;
+    month?: number;
+    year?: number;
+    dateRange?: { start: string; end: string };
+  };
+  currencies: CurrencySummaryDTO[];
+}
+
+export interface CurrencySummaryDTO {
+  currency: string;
+  metrics: {
+    totalContributions: number;
+    totalAmount: number;
+    averageContribution: number;
+    totalDebitAmount: number;
+    acceptedContributions: number;
+    pendingContributions: number;
+    rejectedContributions: number;
+    resetContributions: number;
+    uniqueMembers: number;
+  };
+  topContributors: TopContributorDTO[];
+}
+
+export interface TopContributorDTO {
+  memberId: string;
+  name: string;
+  phone: string;
   totalAmount: number;
-  acceptedContributions: number;
-  pendingContributions: number;
-  rejectedContributions: number;
+  contributionCount: number;
+  averageContribution: number;
 }
 
 // Debit Types
@@ -315,6 +395,212 @@ export interface DebitPaymentHistoryDTO {
   paymentMethod: string;
   referenceNumber?: string;
   createdAt: string;
+}
+
+// Member Debit Analysis (working days Mon-Sat)
+export interface WorkingDayDetail {
+  date: string;
+  dayOfWeek: string;
+  status: 'PAID' | 'UNPAID' | 'DEBIT' | 'FUTURE';
+  amount?: number;
+  contributionId?: string;
+}
+
+export interface WorkingDaysCalendarDTO {
+  memberId: string;
+  memberNames: string;
+  month: number;
+  year: number;
+  workingDays: WorkingDayDetail[];
+  totalWorkingDays: number;
+  paidDays: number;
+  unpaidDays: number;
+  debitDays: number;
+}
+
+export interface MemberDebitAnalysisDTO {
+  memberId: string;
+  memberNames: string;
+  totalWorkingDays: number;
+  paidDays: number;
+  unpaidDays: number;
+  debitDays: number;
+  debitAmount: number;
+  contributionRate: number;
+  currency: string;
+  dailyRate: number;
+  month: number;
+  year: number;
+}
+
+export interface PayDebitRequestDTO {
+  debitDate: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  referenceNumber?: string;
+}
+
+export interface BulkPayDebitRequestDTO {
+  dates: string[];
+  amountPerDay: number;
+  currency: string;
+  paymentMethod: string;
+  referenceNumber?: string;
+}
+
+export interface MemberMonthlySummaryDTO {
+  memberId: string;
+  memberNames: string;
+  month: number;
+  year: number;
+  totalContributions: number;
+  totalAmount: number;
+  totalDebit: number;
+  paidDays: number;
+  unpaidDays: number;
+  debitDays: number;
+}
+
+export interface OrganizationDebitStatisticsDTO {
+  totalMembers: number;
+  membersWithDebit: number;
+  totalDebitAmount: number;
+  totalPaidAmount: number;
+  averageDebitPerMember: number;
+  currency: string;
+  month?: number;
+  year?: number;
+}
+
+export interface DailyWorkingDayDetail {
+  date: string;
+  dayOfWeek: string;
+  isWorkingDay: boolean;
+  hasContribution: boolean;
+  hasDebit: boolean;
+  contributionAmount: number | null;
+  debitAmount: number | null;
+  expectedAmount: number | null;
+  status: 'CONTRIBUTED' | 'MISSED' | 'FUTURE' | 'HOLIDAY';
+  currency: string | null;
+}
+
+export interface MemberContributionDetail {
+  id: string;
+  memberId: string;
+  memberNames: string;
+  referenceNumber: string;
+  seasonId: string;
+  seasonStartDate: string;
+  seasonEndDate: string;
+  amount: number;
+  debitAmount: number;
+  days: number;
+  currency: string;
+  createdBy: string;
+  status: string;
+  statusOperator: string | null;
+  statusTime: string | null;
+  statusComment: string | null;
+  createdAt: string;
+}
+
+export interface TopDefaulterDTO {
+  memberId: string;
+  memberNames: string;
+  memberPhone: string;
+  memberCurrency: string;
+  month: number;
+  year: number;
+  expectedWorkingDays: number;
+  actualContributedDays: number;
+  debitDays: number;
+  dailyContributionAmount: number;
+  expectedTotalAmount: number;
+  actualContributedAmount: number;
+  debitAmount: number;
+  debitDayDetails?: {
+    debitDate: string;
+    dayOfWeek: string;
+    expectedAmountCurrency: string;
+    expectedAmount: number;
+    reason: string;
+  }[];
+  dailyWorkingDayDetails?: DailyWorkingDayDetail[];
+  contributions?: MemberContributionDetail[];
+}
+
+// Organization Statistics (from GET /organizations/statistics)
+export interface TopPerformerDTO {
+  memberId: string;
+  memberNames: string;
+  memberPhone: string;
+  amount: number;
+  performanceType: 'CONTRIBUTOR' | 'DEFAULTER';
+}
+
+export interface MonthlyTrendDTO {
+  month: number;
+  year: number;
+  monthName: string;
+  contributionAmount: number;
+  debitAmount: number;
+  contributionCount: number;
+  memberCount: number;
+  complianceRate: number;
+  periodStart: string;
+  periodEnd: string;
+}
+
+export interface OrganizationStatisticsDTO {
+  organizationId: string;
+  seasonId?: string;
+  month: number;
+  year: number;
+  totalMembers: number;
+  activeMembers: number;
+  inactiveMembers: number;
+  newMembersThisMonth: number;
+  membersWithDebit: number;
+  totalContributions: number;
+  totalContributionAmount: number;
+  averageContributionPerMember: number;
+  primaryCurrency: string;
+  totalWorkingDays: number;
+  totalExpectedWorkingDays: number;
+  totalActualWorkingDays: number;
+  overallComplianceRate: number;
+  totalDebitAmount: number;
+  averageDebitPerMember: number;
+  debitPercentage: number;
+  membersWithZeroDebit: number;
+  totalPayments: number;
+  totalPaymentAmount: number;
+  averagePaymentAmount: number;
+  pendingPayments: number;
+  seasonWeeks: number;
+  completedWeeks: number;
+  remainingWeeks: number;
+  seasonProgress: number;
+  collectionEfficiency: number;
+  memberRetentionRate: number;
+  paymentTimelinessRate: number;
+  topContributors: TopPerformerDTO[];
+  topDefaulters: TopPerformerDTO[];
+  monthlyTrends: MonthlyTrendDTO[];
+  startDate: string;
+  endDate: string;
+  generatedAt: string;
+}
+
+export interface MemberContributionsWithDebitDTO {
+  memberId: string;
+  memberNames: string;
+  contributions: ContributionDTO[];
+  totalAmount: number;
+  totalDebit: number;
+  currency: string;
 }
 
 // Filter and Search Types
@@ -356,7 +642,7 @@ export interface ApiError {
 // Utility Types
 export type PaymentStatus = 'PENDING' | 'PAID' | 'SKIPPED';
 export type SeasonStatus = 'ACTIVE' | 'ENDED' | 'SCHEDULED';
-export type ContributionStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+export type ContributionStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'RESET';
 export type MemberType = 0 | 1 | 2; // Based on backend documentation
 export type PaymentMethod = 'MOBILE_MONEY' | 'BANK_TRANSFER' | 'CASH' | 'OTHER';
 

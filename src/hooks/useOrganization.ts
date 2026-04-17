@@ -1,36 +1,30 @@
 import { useCallback, useState } from 'react';
+import toast from 'react-hot-toast';
 import { organizationService } from '@/services';
-import { Organization, OrganizationDTO } from '@/types/api';
-
-interface OrganizationStatistics {
-  totalMembers: number;
-  activeMembers: number;
-  totalSeasons: number;
-  activeSeasons: number;
-  totalContributions: number;
-  totalAmount: number;
-  currentMonthContributions: number;
-  currentMonthAmount: number;
-  paymentCompletionRate: number;
-}
+import { Organization, OrganizationDTO, OrganizationStatisticsDTO } from '@/types/api';
 
 interface UseOrganizationReturn {
   organization: OrganizationDTO | null;
   organizationDetails: Organization | null;
-  statistics: OrganizationStatistics | null;
+  statistics: OrganizationStatisticsDTO | null;
   isLoading: boolean;
   error: string | null;
   getCurrentOrganization: () => Promise<OrganizationDTO | null>;
   getOrganizationById: (id: string) => Promise<Organization | null>;
   updateOrganization: (id: string, organization: Partial<Organization>) => Promise<Organization | null>;
-  getOrganizationStatistics: (organizationId?: string) => Promise<OrganizationStatistics | null>;
+  getOrganizationStatistics: (params?: {
+    month?: number;
+    year?: number;
+    seasonId?: string;
+    topPerformersLimit?: number;
+  }) => Promise<OrganizationStatisticsDTO | null>;
   clearError: () => void;
 }
 
 export const useOrganization = (): UseOrganizationReturn => {
   const [organization, setOrganization] = useState<OrganizationDTO | null>(null);
   const [organizationDetails, setOrganizationDetails] = useState<Organization | null>(null);
-  const [statistics, setStatistics] = useState<OrganizationStatistics | null>(null);
+  const [statistics, setStatistics] = useState<OrganizationStatisticsDTO | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,14 +90,18 @@ export const useOrganization = (): UseOrganizationReturn => {
 
       if (response.success && response.data) {
         setOrganizationDetails(response.data);
+        toast.success('Organization updated successfully');
         return response.data;
       }
 
-      setError(response.message || 'Failed to update organization');
+      const errorMessage = response.message || 'Failed to update organization';
+      setError(errorMessage);
+      toast.error(errorMessage);
       return null;
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to update organization';
       setError(errorMessage);
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -111,13 +109,18 @@ export const useOrganization = (): UseOrganizationReturn => {
   }, []);
 
   const getOrganizationStatistics = useCallback(async (
-    organizationId?: string
-  ): Promise<OrganizationStatistics | null> => {
+    params?: {
+      month?: number;
+      year?: number;
+      seasonId?: string;
+      topPerformersLimit?: number;
+    }
+  ): Promise<OrganizationStatisticsDTO | null> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await organizationService.getOrganizationStatistics(organizationId);
+      const response = await organizationService.getOrganizationStatistics(params);
 
       if (response.success && response.data) {
         setStatistics(response.data);

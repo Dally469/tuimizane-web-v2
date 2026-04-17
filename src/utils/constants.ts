@@ -56,6 +56,20 @@ export const API_ENDPOINTS = {
     EXPORT: '/api/contributions/export',
     BULK_APPROVE: '/api/contributions/bulk-approve',
     BULK_REJECT: '/api/contributions/bulk-reject',
+    RESET_TO_RESET: '/api/contributions/reset-to-reset',
+    RESET_BY_SEASON: (seasonId: string) => `/api/contributions/reset-to-reset/season/${seasonId}`,
+    RESET_BY_MEMBER: (memberId: string) => `/api/contributions/reset-to-reset/member/${memberId}`,
+    MEMBER_WITH_DEBIT: (memberId: string) => `/api/contributions/member/${memberId}/with-debit`,
+    MEMBER_DEBIT_ANALYSIS: (memberId: string) => `/api/contributions/member/${memberId}/debit-analysis`,
+    MEMBER_PAY_DEBIT: (memberId: string) => `/api/contributions/member/${memberId}/pay-debit`,
+    MEMBER_BULK_PAY_DEBIT: (memberId: string) => `/api/contributions/member/${memberId}/bulk-pay-debit`,
+    MEMBER_WORKING_DAYS: (memberId: string) => `/api/contributions/member/${memberId}/working-days-calendar`,
+    MEMBER_DEBIT_HISTORY: (memberId: string) => `/api/contributions/member/${memberId}/debit-history`,
+    ORG_DEBIT_STATISTICS: '/api/contributions/organization/debit-statistics',
+    ORG_TOP_DEFAULTERS: '/api/contributions/organization/top-defaulters',
+    ORG_MONTHLY_SUMMARY: '/api/contributions/organization/monthly-summary',
+    ORG_DEBIT_REPORT: '/api/contributions/organization/members-debit-report',
+    SEARCH: '/api/contributions/search',
   },
   ORGANIZATIONS: {
     BASE: '/api/organizations',
@@ -89,12 +103,19 @@ export const CONTRIBUTION_STATUS = {
   PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED',
+  RESET: 'RESET',
+} as const;
+
+export const MEMBER_STATUS = {
+  ACTIVE: 1,
+  INACTIVE: 0,
 } as const;
 
 export const MEMBER_TYPE = {
-  REGULAR: 0,
-  PREMIUM: 1,
-  VIP: 2,
+  VISION_1: 0,
+  VISION_2: 1,
+  VISION_3: 2,
+  VISION_4: 3,
 } as const;
 
 export const PAYMENT_METHOD = {
@@ -107,9 +128,8 @@ export const PAYMENT_METHOD = {
 // Currency Constants
 export const CURRENCIES = {
   RWF: { code: 'RWF', name: 'Rwandan Franc', symbol: 'RWF' },
-  USD: { code: 'USD', name: 'US Dollar', symbol: '$' },
-  EUR: { code: 'EUR', name: 'Euro', symbol: 'EUR' },
-  GBP: { code: 'GBP', name: 'British Pound', symbol: '£' },
+  USD: { code: 'USD', name: 'US Dollar', symbol: 'USD' },
+  CDF: { code: 'CDF', name: 'Congolese Franc', symbol: 'CDF' },
 } as const;
 
 // Date Constants

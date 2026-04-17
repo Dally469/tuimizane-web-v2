@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { paymentService } from '@/services';
 import {
   ApiResponse,
@@ -14,6 +15,7 @@ interface UsePaymentsReturn {
   seasonStatus: SeasonStatusDTO | null;
   payoutHistory: MemberPayoutDTO[];
   scheduledPayouts: MemberPayoutDTO[];
+  payoutDetail: MemberPayoutDTO | null;
   isLoading: boolean;
   error: string | null;
   fetchRankings: (seasonId: string) => Promise<void>;
@@ -24,6 +26,9 @@ interface UsePaymentsReturn {
   setTopThreeMembers: (seasonId: string, memberIds: string[]) => Promise<boolean>;
   resetSeasonCircle: (seasonId: string) => Promise<boolean>;
   fetchPaymentHistory: (seasonId: string) => Promise<void>;
+  fetchPayoutDetails: (payoutId: string) => Promise<MemberPayoutDTO | null>;
+  cancelPayout: (payoutId: string) => Promise<boolean>;
+  updatePayout: (payoutId: string, request: Partial<PaymentProcessRequestDTO>) => Promise<MemberPayoutDTO | null>;
   clearError: () => void;
 }
 
@@ -33,6 +38,7 @@ export const usePayments = (): UsePaymentsReturn => {
   const [seasonStatus, setSeasonStatus] = useState<SeasonStatusDTO | null>(null);
   const [payoutHistory, setPayoutHistory] = useState<MemberPayoutDTO[]>([]);
   const [scheduledPayouts, setScheduledPayouts] = useState<MemberPayoutDTO[]>([]);
+  const [payoutDetail, setPayoutDetail] = useState<MemberPayoutDTO | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,14 +123,18 @@ export const usePayments = (): UsePaymentsReturn => {
           fetchSeasonStatus(seasonId),
           fetchRankings(seasonId),
         ]);
+        toast.success('Payment processed successfully');
         return response.data;
       } else {
-        setError(response.message || 'Failed to process payment');
+        const errorMessage = response.message || 'Failed to process payment';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return null;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to process payment';
       setError(errorMessage);
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -141,14 +151,18 @@ export const usePayments = (): UsePaymentsReturn => {
       if (response.success && response.data) {
         setScheduledPayouts(response.data);
         await fetchSeasonStatus(seasonId); // Refresh status
+        toast.success('Payouts scheduled successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to schedule payouts');
+        const errorMessage = response.message || 'Failed to schedule payouts';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to schedule payouts';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -170,14 +184,18 @@ export const usePayments = (): UsePaymentsReturn => {
           fetchRankings(seasonId),
           fetchNextMember(seasonId),
         ]);
+        toast.success('Top three members set successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to set top three members');
+        const errorMessage = response.message || 'Failed to set top three members';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to set top three members';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -198,14 +216,18 @@ export const usePayments = (): UsePaymentsReturn => {
           fetchNextMember(seasonId),
           fetchSeasonStatus(seasonId),
         ]);
+        toast.success('Season circle reset successfully');
         return true;
       } else {
-        setError(response.message || 'Failed to reset season circle');
+        const errorMessage = response.message || 'Failed to reset season circle';
+        setError(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to reset season circle';
       setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -232,12 +254,95 @@ export const usePayments = (): UsePaymentsReturn => {
     }
   }, []);
 
+  const fetchPayoutDetails = useCallback(async (payoutId: string): Promise<MemberPayoutDTO | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await paymentService.getPayoutDetails(payoutId);
+
+      if (response.success && response.data) {
+        setPayoutDetail(response.data);
+        return response.data;
+      } else {
+        const errorMessage = response.message || 'Failed to fetch payout details';
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return null;
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to fetch payout details';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const cancelPayout = useCallback(async (payoutId: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await paymentService.cancelPayout(payoutId);
+
+      if (response.success) {
+        toast.success('Payout cancelled successfully');
+        return true;
+      } else {
+        const errorMessage = response.message || 'Failed to cancel payout';
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return false;
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to cancel payout';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updatePayout = useCallback(async (
+    payoutId: string,
+    request: Partial<PaymentProcessRequestDTO>
+  ): Promise<MemberPayoutDTO | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await paymentService.updatePayout(payoutId, request);
+
+      if (response.success && response.data) {
+        setPayoutDetail(response.data);
+        toast.success('Payout updated successfully');
+        return response.data;
+      } else {
+        const errorMessage = response.message || 'Failed to update payout';
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return null;
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to update payout';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     rankings,
     nextMember,
     seasonStatus,
     payoutHistory,
     scheduledPayouts,
+    payoutDetail,
     isLoading,
     error,
     fetchRankings,
@@ -248,6 +353,9 @@ export const usePayments = (): UsePaymentsReturn => {
     setTopThreeMembers,
     resetSeasonCircle,
     fetchPaymentHistory,
+    fetchPayoutDetails,
+    cancelPayout,
+    updatePayout,
     clearError,
   };
 };

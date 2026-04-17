@@ -4,3 +4,4 @@ export { useSeasons } from './useSeasons';
 export { usePayments } from './usePayments';
 export { useMembers } from './useMembers';
 export { useOrganization } from './useOrganization';
+export { useContributions } from './useContributions';

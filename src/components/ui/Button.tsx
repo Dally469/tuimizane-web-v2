@@ -18,21 +18,21 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    'inline-flex items-center justify-center gap-2 rounded-2xl border text-sm font-semibold tracking-tight transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.99]';
+    'inline-flex items-center justify-center gap-2 rounded-2xl border text-sm font-semibold tracking-tight transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.99] disabled:pointer-events-none';
 
   const variantClasses = {
     primary:
-      'border-transparent bg-gradient-to-r from-ink-900 via-primary-700 to-accent-500 text-white shadow-glow hover:-translate-y-0.5 hover:shadow-soft',
+      'border-transparent bg-gradient-to-r from-primary-900 via-primary-700 to-primary-400 text-white shadow-glow hover:-translate-y-0.5 hover:shadow-soft',
     secondary:
-      'border-white/70 bg-white/80 text-ink-900 shadow-soft backdrop-blur hover:-translate-y-0.5 hover:bg-white',
+      'border-white/70 bg-white/85 text-ink-900 shadow-soft backdrop-blur hover:-translate-y-0.5 hover:bg-white',
     success:
-      'border-transparent bg-gradient-to-r from-accent-600 to-emerald-400 text-white shadow-soft hover:-translate-y-0.5',
+      'border-transparent bg-gradient-to-r from-accent-700 to-accent-400 text-white shadow-soft hover:-translate-y-0.5',
     warning:
       'border-transparent bg-gradient-to-r from-amber-500 to-orange-400 text-white shadow-soft hover:-translate-y-0.5',
     danger:
       'border-transparent bg-gradient-to-r from-rose-600 to-red-400 text-white shadow-soft hover:-translate-y-0.5',
     ghost:
-      'border-white/0 bg-white/0 text-ink-700 hover:border-white/60 hover:bg-white/70 hover:backdrop-blur',
+      'border-slate-200/70 bg-transparent text-ink-700 hover:border-primary-200 hover:bg-primary-50/80 hover:text-primary-800 hover:backdrop-blur',
   };
 
   const sizeClasses = {

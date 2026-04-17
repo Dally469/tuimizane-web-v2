@@ -66,13 +66,23 @@ export const formatCurrency = (
     if (isNaN(numAmount)) {
       return 'Invalid amount';
     }
-    
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(numAmount);
+    // Ensure currency is a valid ISO 4217 3-letter code; fall back to default if not
+    const safeCurrency = (typeof currency === 'string' && currency && currency.length === 3)
+      ? currency.toUpperCase()
+      : 'RWF';
+
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: safeCurrency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(numAmount);
+    } catch (err) {
+      // Fallback: format as plain number with thousands separators
+      console.warn('Intl.NumberFormat failed for currency, falling back to number format:', err);
+      return numAmount.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
   } catch (error) {
     console.error('Currency formatting error:', error);
     return 'Invalid amount';
@@ -210,9 +220,10 @@ export const formatPaymentMethod = (method: string): string => {
 // Member type formatting
 export const formatMemberType = (type: number): string => {
   const typeMap: Record<number, string> = {
-    0: 'Regular',
-    1: 'Premium',
-    2: 'VIP',
+    0: 'Vision 1',
+    1: 'Vision 2',
+    2: 'Vision 3',
+    3: 'Vision 4',
   };
   
   return typeMap[type] || 'Unknown';

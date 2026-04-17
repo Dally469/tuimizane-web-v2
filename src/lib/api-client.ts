@@ -1,6 +1,12 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import { ApiResponse, ApiError, AuthHeaders } from '@/types/api';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    skipAuth?: boolean;
+  }
+}
+
 class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
@@ -17,7 +23,7 @@ class ApiClient {
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
       (config) => {
-        if (this.token) {
+        if (this.token && !config.skipAuth && !config.headers.Authorization) {
           config.headers.Authorization = `Bearer ${this.token}`;
         }
         return config;
@@ -91,45 +97,45 @@ class ApiClient {
   }
 
   // HTTP Methods
-  async get<T>(url: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
+  async get<T>(url: string, params?: Record<string, any>, headers?: Record<string, string>, skipAuth?: boolean): Promise<ApiResponse<T>> {
     try {
-      const response = await this.client.get<ApiResponse<T>>(url, { params });
+      const response = await this.client.get<ApiResponse<T>>(url, { params, headers, skipAuth });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError<ApiResponse>);
     }
   }
 
-  async post<T>(url: string, data?: any, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+  async post<T>(url: string, data?: any, headers?: Record<string, string>, skipAuth?: boolean): Promise<ApiResponse<T>> {
     try {
-      const response = await this.client.post<ApiResponse<T>>(url, data, { headers });
+      const response = await this.client.post<ApiResponse<T>>(url, data, { headers, skipAuth });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError<ApiResponse>);
     }
   }
 
-  async put<T>(url: string, data?: any, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+  async put<T>(url: string, data?: any, headers?: Record<string, string>, skipAuth?: boolean): Promise<ApiResponse<T>> {
     try {
-      const response = await this.client.put<ApiResponse<T>>(url, data, { headers });
+      const response = await this.client.put<ApiResponse<T>>(url, data, { headers, skipAuth });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError<ApiResponse>);
     }
   }
 
-  async delete<T>(url: string, data?: any): Promise<ApiResponse<T>> {
+  async delete<T>(url: string, data?: any, headers?: Record<string, string>, skipAuth?: boolean): Promise<ApiResponse<T>> {
     try {
-      const response = await this.client.delete<ApiResponse<T>>(url, { data });
+      const response = await this.client.delete<ApiResponse<T>>(url, { data, headers, skipAuth });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError<ApiResponse>);
     }
   }
 
-  async patch<T>(url: string, data?: any, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+  async patch<T>(url: string, data?: any, headers?: Record<string, string>, skipAuth?: boolean): Promise<ApiResponse<T>> {
     try {
-      const response = await this.client.patch<ApiResponse<T>>(url, data, { headers });
+      const response = await this.client.patch<ApiResponse<T>>(url, data, { headers, skipAuth });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError<ApiResponse>);
@@ -137,12 +143,14 @@ class ApiClient {
   }
 
   // File upload
-  async upload<T>(url: string, formData: FormData, onProgress?: (progress: number) => void): Promise<ApiResponse<T>> {
+  async upload<T>(url: string, formData: FormData, onProgress?: (progress: number) => void, headers?: Record<string, string>, skipAuth?: boolean): Promise<ApiResponse<T>> {
     try {
       const response = await this.client.post<ApiResponse<T>>(url, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          ...headers,
         },
+        skipAuth,
         onUploadProgress: (progressEvent) => {
           if (onProgress && progressEvent.total) {
             const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -157,10 +165,12 @@ class ApiClient {
   }
 
   // Download file
-  async download(url: string, filename?: string): Promise<void> {
+  async download(url: string, filename?: string, headers?: Record<string, string>, skipAuth?: boolean): Promise<void> {
     try {
       const response = await this.client.get(url, {
         responseType: 'blob',
+        headers,
+        skipAuth,
       });
 
       const blob = new Blob([response.data]);

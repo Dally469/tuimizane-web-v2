@@ -1,64 +1,83 @@
-import apiClient from '@/lib/api-client';
+import { httpRequest } from '@/lib/httpRequest';
 import { ApiResponse, LoginRequest, LoginResponse, ChangePasswordRequest } from '@/types/api';
 
 export class AuthService {
+  private unwrapResponse<T>(response: ApiResponse<T> | T, fallbackMessage: string): ApiResponse<T> {
+    if (
+      response &&
+      typeof response === 'object' &&
+      'success' in (response as Record<string, unknown>) &&
+      'status' in (response as Record<string, unknown>)
+    ) {
+      return response as ApiResponse<T>;
+    }
+
+    return {
+      status: 200,
+      success: true,
+      message: fallbackMessage,
+      data: response as T,
+    };
+  }
+
   // Login
   async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    const response = await apiClient.post<LoginResponse>('/api/auth/login', credentials);
-    
-    // Store token if login successful
-    if (response.success && response.data?.token) {
-      apiClient.setToken(response.data.token);
+    try {
+      const response = await httpRequest.post('/auth/login', credentials);
+      return this.unwrapResponse<LoginResponse>(response, 'Login successful');
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Login failed' };
     }
-    
-    return response;
   }
 
   // Logout
   async logout(): Promise<void> {
     try {
-      await apiClient.post('/api/auth/logout');
-    } finally {
-      // Always clear token on logout
-      apiClient.clearToken();
+      await httpRequest.post('/auth/logout');
+    } catch (error) {
+      // Ignore logout errors
+      console.warn('Logout request failed:', error);
     }
   }
 
   // Change password
   async changePassword(request: ChangePasswordRequest): Promise<ApiResponse<void>> {
-    return apiClient.post<void>('/api/auth/change-password', request);
+    try {
+      await httpRequest.post('/auth/change-password', request);
+      return { status: 200, success: true, message: 'Password changed successfully' };
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Change password failed' };
+    }
   }
 
   // Validate token
   async validateToken(): Promise<ApiResponse<boolean>> {
-    return apiClient.get<boolean>('/api/auth/validate');
+    try {
+      const response = await httpRequest.get('/auth/validate');
+      return this.unwrapResponse<boolean>(response, 'Token is valid');
+    } catch (error: any) {
+      return { status: 401, success: false, message: error.message || 'Token validation failed' };
+    }
   }
 
   // Refresh token
   async refreshToken(): Promise<ApiResponse<LoginResponse>> {
-    const response = await apiClient.post<LoginResponse>('/api/auth/refresh');
-    
-    // Update token if refresh successful
-    if (response.success && response.data?.token) {
-      apiClient.setToken(response.data.token);
+    try {
+      const response = await httpRequest.post('/auth/refresh');
+      return this.unwrapResponse<LoginResponse>(response, 'Token refreshed successfully');
+    } catch (error: any) {
+      return { status: 401, success: false, message: error.message || 'Token refresh failed' };
     }
-    
-    return response;
   }
 
   // Get current user info
   async getCurrentUser(): Promise<ApiResponse<any>> {
-    return apiClient.get<any>('/api/auth/me');
-  }
-
-  // Check if user is authenticated
-  isAuthenticated(): boolean {
-    return !!apiClient.getToken();
-  }
-
-  // Get stored token
-  getToken(): string | null {
-    return apiClient.getToken();
+    try {
+      const response = await httpRequest.get('/auth/me');
+      return this.unwrapResponse(response, 'User retrieved successfully');
+    } catch (error: any) {
+      return { status: 401, success: false, message: error.message || 'Failed to get current user' };
+    }
   }
 }
 

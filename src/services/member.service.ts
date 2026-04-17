@@ -1,4 +1,4 @@
-import apiClient from '@/lib/api-client';
+import { httpRequest } from '@/lib/httpRequest';
 import {
   ApiResponse,
   Member,
@@ -6,37 +6,94 @@ import {
   AssignCardRequest,
   UploadResultDTO,
   MemberContributionResponseDTO,
+  TopDefaulterDTO,
 } from '@/types/api';
 
 export class MemberService {
-  // Get all members for the organization
+  // UUID validation regex
+  private isValidUUID(uuid: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  }
+
+  private unwrapResponse<T>(response: ApiResponse<T> | T, fallbackMessage: string): ApiResponse<T> {
+    if (
+      response &&
+      typeof response === 'object' &&
+      'success' in (response as Record<string, unknown>) &&
+      'status' in (response as Record<string, unknown>)
+    ) {
+      return response as ApiResponse<T>;
+    }
+
+    return {
+      status: 200,
+      success: true,
+      message: fallbackMessage,
+      data: response as T,
+    };
+  }
+
   async getAllMembers(): Promise<ApiResponse<MemberDTO[]>> {
-    return apiClient.get<MemberDTO[]>('/api/members');
+    try {
+      const response = await httpRequest.get('/members');
+      return this.unwrapResponse<MemberDTO[]>(response, 'Members retrieved successfully');
+    } catch (error: any) {
+      return { status: 500, success: false, message: error.message || 'Failed to get members' };
+    }
   }
 
   // Get member by ID
   async getMemberById(id: string): Promise<ApiResponse<Member>> {
-    return apiClient.get<Member>(`/api/members/${id}`);
+    if (!id || !this.isValidUUID(id)) {
+      throw new Error('Invalid member ID: must be a valid UUID');
+    }
+    try {
+      const response = await httpRequest.get(`/members/${id}`);
+      return this.unwrapResponse<Member>(response, 'Member retrieved successfully');
+    } catch (error: any) {
+      return { status: 404, success: false, message: error.message || 'Failed to get member' };
+    }
   }
 
   // Create new member
   async createMember(member: Partial<Member>, months: number): Promise<ApiResponse<Member>> {
-    return apiClient.post<Member>(`/api/members/add-member?months=${months}`, member);
+    try {
+      const response = await httpRequest.post(`/members/add-member?months=${months}`, member);
+      return this.unwrapResponse<Member>(response, 'Member created successfully');
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Failed to create member' };
+    }
   }
 
   // Update member
   async updateMember(id: string, memberDetails: Partial<Member>): Promise<ApiResponse<Member>> {
-    return apiClient.put<Member>(`/api/members/${id}`, memberDetails);
+    try {
+      const response = await httpRequest.put(`/members/${id}`, memberDetails);
+      return this.unwrapResponse<Member>(response, 'Member updated successfully');
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Failed to update member' };
+    }
   }
 
   // Delete member
   async deleteMember(id: string): Promise<ApiResponse<void>> {
-    return apiClient.delete<void>(`/api/members/${id}`);
+    try {
+      await httpRequest.delete(`/members/${id}`);
+      return { status: 200, success: true, message: 'Member deleted successfully' };
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Failed to delete member' };
+    }
   }
 
   // Change member status
   async changeMemberStatus(id: string, status: string): Promise<ApiResponse<void>> {
-    return apiClient.put<void>(`/api/members/${id}/status?status=${status}`);
+    try {
+      await httpRequest.put(`/members/${id}/status?status=${status}`);
+      return { status: 200, success: true, message: 'Member status changed successfully' };
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Failed to change member status' };
+    }
   }
 
   // Upload members from Excel file
@@ -44,27 +101,52 @@ export class MemberService {
     const formData = new FormData();
     formData.append('file', file);
     
-    return apiClient.upload<UploadResultDTO>('/api/members/upload', formData, onProgress);
+    try {
+      const response = await httpRequest.post('/members/upload', formData, true); // multipart
+      return this.unwrapResponse<UploadResultDTO>(response, 'Members uploaded successfully');
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Failed to upload members' };
+    }
   }
 
   // Assign card to member
   async assignCard(memberId: string, request: AssignCardRequest): Promise<ApiResponse<Member>> {
-    return apiClient.put<Member>(`/api/members/${memberId}/assign-card`, request);
+    try {
+      const response = await httpRequest.put(`/members/${memberId}/assign-card`, request);
+      return this.unwrapResponse<Member>(response, 'Card assigned successfully');
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Failed to assign card' };
+    }
   }
 
   // Unassign card from member
   async unassignCard(memberId: string): Promise<ApiResponse<Member>> {
-    return apiClient.put<Member>(`/api/members/${memberId}/unassign-card`);
+    try {
+      const response = await httpRequest.put(`/members/${memberId}/unassign-card`);
+      return this.unwrapResponse<Member>(response, 'Card unassigned successfully');
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Failed to unassign card' };
+    }
   }
 
   // Find member by card number
   async findMemberByCard(cardNumber: string): Promise<ApiResponse<Member>> {
-    return apiClient.get<Member>(`/api/members/find-by-card/${cardNumber}`);
+    try {
+      const response = await httpRequest.get(`/members/find-by-card/${cardNumber}`);
+      return this.unwrapResponse<Member>(response, 'Member found successfully');
+    } catch (error: any) {
+      return { status: 404, success: false, message: error.message || 'Failed to find member by card' };
+    }
   }
 
   // Get member contributions
   async getMemberContributions(memberId: string): Promise<ApiResponse<MemberContributionResponseDTO[]>> {
-    return apiClient.get<MemberContributionResponseDTO[]>(`/api/members/${memberId}/contributions`);
+    try {
+      const response = await httpRequest.get(`/members/${memberId}/contributions`);
+      return this.unwrapResponse<MemberContributionResponseDTO[]>(response, 'Member contributions retrieved successfully');
+    } catch (error: any) {
+      return { status: 500, success: false, message: error.message || 'Failed to get member contributions' };
+    }
   }
 
   // Get member contributions from start date
@@ -72,11 +154,16 @@ export class MemberService {
     memberId: string,
     seasonId?: string
   ): Promise<ApiResponse<MemberContributionResponseDTO[]>> {
-    const params = seasonId ? { seasonId } : {};
-    return apiClient.get<MemberContributionResponseDTO[]>(
-      `/api/members/${memberId}/contributions-from-start-date`,
-      params
-    );
+    const url = seasonId 
+      ? `/members/${memberId}/contributions-from-start-date?seasonId=${seasonId}`
+      : `/members/${memberId}/contributions-from-start-date`;
+    
+    try {
+      const response = await httpRequest.get(url);
+      return this.unwrapResponse<MemberContributionResponseDTO[]>(response, 'Member contributions from start date retrieved successfully');
+    } catch (error: any) {
+      return { status: 500, success: false, message: error.message || 'Failed to get member contributions from start date' };
+    }
   }
 
   // Get member contributions by date range
@@ -86,13 +173,16 @@ export class MemberService {
     endDate: string,
     seasonId?: string
   ): Promise<ApiResponse<MemberContributionResponseDTO[]>> {
-    const params: any = { startDate, endDate };
-    if (seasonId) params.seasonId = seasonId;
+    const params = seasonId 
+      ? `?startDate=${startDate}&endDate=${endDate}&seasonId=${seasonId}`
+      : `?startDate=${startDate}&endDate=${endDate}`;
     
-    return apiClient.get<MemberContributionResponseDTO[]>(
-      `/api/members/${memberId}/contributions-by-date-range`,
-      params
-    );
+    try {
+      const response = await httpRequest.get(`/members/${memberId}/contributions-by-date-range${params}`);
+      return this.unwrapResponse<MemberContributionResponseDTO[]>(response, 'Member contributions by date range retrieved successfully');
+    } catch (error: any) {
+      return { status: 500, success: false, message: error.message || 'Failed to get member contributions by date range' };
+    }
   }
 
   // Get member history
@@ -102,20 +192,30 @@ export class MemberService {
     endDate?: string,
     seasonId?: string
   ): Promise<ApiResponse<any>> {
-    const params: any = {};
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
-    if (seasonId) params.seasonId = seasonId;
+    const params = [];
+    if (startDate) params.push(`startDate=${startDate}`);
+    if (endDate) params.push(`endDate=${endDate}`);
+    if (seasonId) params.push(`seasonId=${seasonId}`);
+    const queryString = params.length > 0 ? `?${params.join('&')}` : '';
     
-    return apiClient.get<any>(`/api/members/${memberId}/history`, params);
+    try {
+      const response = await httpRequest.get(`/members/${memberId}/history${queryString}`);
+      return this.unwrapResponse(response, 'Member history retrieved successfully');
+    } catch (error: any) {
+      return { status: 500, success: false, message: error.message || 'Failed to get member history' };
+    }
   }
 
   // Reset member start date
   async resetMemberStartDate(memberId: string, startDate: string, months?: number): Promise<ApiResponse<Member>> {
-    const params: any = { startDate };
-    if (months) params.months = months;
+    const params = months ? `?startDate=${startDate}&months=${months}` : `?startDate=${startDate}`;
     
-    return apiClient.put<Member>(`/api/members/${memberId}/reset-start-date`, null, params);
+    try {
+      const response = await httpRequest.put(`/members/${memberId}/reset-start-date${params}`);
+      return this.unwrapResponse<Member>(response, 'Member start date reset successfully');
+    } catch (error: any) {
+      return { status: 400, success: false, message: error.message || 'Failed to reset member start date' };
+    }
   }
 
   // Search members
@@ -124,12 +224,33 @@ export class MemberService {
     type?: number;
     cardAssigned?: boolean;
   }): Promise<ApiResponse<MemberDTO[]>> {
-    const params: any = { query };
+    const params = [`query=${encodeURIComponent(query)}`];
     if (filters) {
-      Object.assign(params, filters);
+      if (filters.status) params.push(`status=${filters.status}`);
+      if (filters.type !== undefined) params.push(`type=${filters.type}`);
+      if (filters.cardAssigned !== undefined) params.push(`cardAssigned=${filters.cardAssigned}`);
     }
+    const queryString = `?${params.join('&')}`;
     
-    return apiClient.get<MemberDTO[]>('/api/members/search', params);
+    try {
+      const response = await httpRequest.get(`/members/search${queryString}`);
+      return this.unwrapResponse<MemberDTO[]>(response, 'Members searched successfully');
+    } catch (error: any) {
+      return { status: 500, success: false, message: error.message || 'Failed to search members' };
+    }
+  }
+
+  // Get member detail with debit information
+  async getMemberDetail(memberId: string): Promise<ApiResponse<TopDefaulterDTO>> {
+    if (!memberId || !this.isValidUUID(memberId)) {
+      throw new Error('Invalid member ID: must be a valid UUID');
+    }
+    try {
+      const response = await httpRequest.get(`/members/${memberId}`);
+      return this.unwrapResponse<TopDefaulterDTO>(response, 'Member detail retrieved successfully');
+    } catch (error: any) {
+      return { status: 500, success: false, message: error.message || 'Failed to get member detail' };
+    }
   }
 
   // Get member statistics
@@ -140,7 +261,12 @@ export class MemberService {
     lastContributionDate?: string;
     paymentStatus: string;
   }>> {
-    return apiClient.get<any>(`/api/members/${memberId}/statistics`);
+    try {
+      const response = await httpRequest.get(`/members/${memberId}/statistics`);
+      return this.unwrapResponse(response, 'Member statistics retrieved successfully');
+    } catch (error: any) {
+      return { status: 500, success: false, message: error.message || 'Failed to get member statistics' };
+    }
   }
 }
 

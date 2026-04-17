@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { Button, Input, Select } from '@/components/ui';
+import {
+  Box,
+  Button,
+  FormControl,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { User, Phone, Mail, CreditCard, Banknote, MapPin } from 'lucide-react';
 import { useMembers } from '@/hooks';
 import { Member } from '@/types/api';
 import { CURRENCIES, MEMBER_TYPE } from '@/utils/constants';
@@ -26,15 +39,14 @@ export const MemberForm: React.FC<MemberFormProps> = ({
     amount: member?.amount || '',
     currency: member?.currency || 'RWF',
     address: member?.address || '',
-    type: member?.type || MEMBER_TYPE.REGULAR,
-    months: 12, // Default to 12 months for new members
+    type: member?.type || MEMBER_TYPE.VISION_1,
+    months: 12,
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -43,35 +55,16 @@ export const MemberForm: React.FC<MemberFormProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.names.trim()) {
-      newErrors.names = 'Name is required';
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!isValidPhoneNumber(formData.phone)) {
-      newErrors.phone = 'Please enter a valid Rwandan phone number';
-    }
-
-    if (formData.email && !isValidEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!formData.idNumber.trim()) {
-      newErrors.idNumber = 'ID number is required';
-    } else if (!isValidIdNumber(formData.idNumber)) {
-      newErrors.idNumber = 'Please enter a valid 16-digit ID number';
-    }
-
-    if (!formData.amount.trim()) {
-      newErrors.amount = 'Amount is required';
-    } else if (isNaN(parseFloat(formData.amount)) || parseFloat(formData.amount) <= 0) {
+    if (!formData.names.trim()) newErrors.names = 'Name is required';
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+    else if (!isValidPhoneNumber(formData.phone)) newErrors.phone = 'Enter a valid Rwanda or DRC phone number';
+    if (formData.email && !isValidEmail(formData.email)) newErrors.email = 'Please enter a valid email address';
+    if (!formData.idNumber.trim()) newErrors.idNumber = 'ID number is required';
+    else if (!isValidIdNumber(formData.idNumber)) newErrors.idNumber = 'Enter a valid ID (6-20 alphanumeric characters)';
+    if (!formData.amount.trim()) newErrors.amount = 'Amount is required';
+    else if (isNaN(parseFloat(formData.amount)) || parseFloat(formData.amount) <= 0)
       newErrors.amount = 'Please enter a valid amount greater than 0';
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
-    }
+    if (!formData.address.trim()) newErrors.address = 'Address is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -79,7 +72,6 @@ export const MemberForm: React.FC<MemberFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
 
     try {
@@ -95,143 +87,161 @@ export const MemberForm: React.FC<MemberFormProps> = ({
       };
 
       let success = false;
-      
       if (member?.id) {
-        // Update existing member
         success = await updateMember(member.id, memberData) !== null;
       } else {
-        // Create new member
         success = await createMember(memberData, formData.months) !== null;
       }
-      
-      if (success) {
-        onSuccess?.();
-      }
+      if (success) onSuccess?.();
     } catch (error) {
       console.error('Failed to save member:', error);
     }
   };
 
-  const currencyOptions = Object.values(CURRENCIES).map(currency => ({
-    value: currency.code,
-    label: `${currency.name} (${currency.symbol})`,
-  }));
-
-  const memberTypeOptions = Object.entries(MEMBER_TYPE).map(([key, value]) => ({
-    value: value.toString(),
-    label: key.charAt(0) + key.slice(1).toLowerCase(),
-  }));
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          id="names"
-          label="Full Name"
-          value={formData.names}
-          onChange={(e) => handleInputChange('names', e.target.value)}
-          error={errors.names}
-          placeholder="Enter member's full name"
-        />
+    <Box component="form" onSubmit={handleSubmit} sx={{ pt: 1, display: 'grid', gap: 3 }}>
+      {/* Personal info */}
+      <Paper variant="outlined" sx={{ p: 3, borderRadius: '18px', bgcolor: 'background.warm', boxShadow: 'none' }}>
+        <Stack direction="row" spacing={1} sx={{ mb: 2.5, alignItems: 'center' }}>
+          <User size={18} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Personal information</Typography>
+        </Stack>
 
-        <Input
-          id="phone"
-          label="Phone Number"
-          value={formData.phone}
-          onChange={(e) => handleInputChange('phone', e.target.value)}
-          error={errors.phone}
-          placeholder="07xxxxxxxx or +2507xxxxxxxx"
-        />
-
-        <Input
-          id="email"
-          type="email"
-          label="Email Address"
-          value={formData.email}
-          onChange={(e) => handleInputChange('email', e.target.value)}
-          error={errors.email}
-          placeholder="member@example.com"
-        />
-
-        <Input
-          id="idNumber"
-          label="ID Number"
-          value={formData.idNumber}
-          onChange={(e) => handleInputChange('idNumber', e.target.value)}
-          error={errors.idNumber}
-          placeholder="16-digit national ID number"
-        />
-
-        <Input
-          id="amount"
-          label="Contribution Amount"
-          value={formData.amount}
-          onChange={(e) => handleInputChange('amount', e.target.value)}
-          error={errors.amount}
-          placeholder="e.g., 50000"
-        />
-
-        <Select
-          id="currency"
-          label="Currency"
-          value={formData.currency}
-          onChange={(e) => handleInputChange('currency', e.target.value)}
-          options={currencyOptions}
-        />
-
-        <Select
-          id="type"
-          label="Member Type"
-          value={formData.type.toString()}
-          onChange={(e) => handleInputChange('type', parseInt(e.target.value))}
-          options={memberTypeOptions}
-        />
-
-        {!member?.id && (
-          <Input
-            id="months"
-            type="number"
-            label="Membership Duration (months)"
-            value={formData.months.toString()}
-            onChange={(e) => handleInputChange('months', parseInt(e.target.value))}
-            min="1"
-            max="60"
-            helperText="Number of months for this membership"
+        <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+          <TextField
+            label="Full Name"
+            value={formData.names}
+            onChange={(e) => handleInputChange('names', e.target.value)}
+            error={!!errors.names}
+            helperText={errors.names}
+            placeholder="Enter member's full name"
+            fullWidth
           />
-        )}
-      </div>
+          <TextField
+            label="Phone Number"
+            value={formData.phone}
+            onChange={(e) => handleInputChange('phone', e.target.value)}
+            error={!!errors.phone}
+            helperText={errors.phone}
+            placeholder="RW: 07xx or +2507xx · DRC: 09xx or +243xx"
+            slotProps={{
+              input: { startAdornment: <InputAdornment position="start"><Phone size={16} /></InputAdornment> },
+            }}
+            fullWidth
+          />
+          <TextField
+            label="Email Address"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            error={!!errors.email}
+            helperText={errors.email}
+            placeholder="member@example.com"
+            slotProps={{
+              input: { startAdornment: <InputAdornment position="start"><Mail size={16} /></InputAdornment> },
+            }}
+            fullWidth
+          />
+          <TextField
+            label="ID Number"
+            value={formData.idNumber}
+            onChange={(e) => handleInputChange('idNumber', e.target.value)}
+            error={!!errors.idNumber}
+            helperText={errors.idNumber}
+            placeholder="National ID (6-20 chars)"
+            slotProps={{
+              input: { startAdornment: <InputAdornment position="start"><CreditCard size={16} /></InputAdornment> },
+            }}
+            fullWidth
+          />
+        </Box>
+      </Paper>
 
-      <div>
-        <Input
-          id="address"
+      {/* Financial info */}
+      <Paper variant="outlined" sx={{ p: 3, borderRadius: '18px', bgcolor: 'background.warm', boxShadow: 'none' }}>
+        <Stack direction="row" spacing={1} sx={{ mb: 2.5, alignItems: 'center' }}>
+          <Banknote size={18} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Contribution details</Typography>
+        </Stack>
+
+        <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+          <TextField
+            label="Contribution Amount"
+            value={formData.amount}
+            onChange={(e) => handleInputChange('amount', e.target.value)}
+            error={!!errors.amount}
+            helperText={errors.amount}
+            placeholder="e.g., 50000"
+            fullWidth
+          />
+          <FormControl fullWidth>
+            <InputLabel>Currency</InputLabel>
+            <Select
+              value={formData.currency}
+              label="Currency"
+              onChange={(e) => handleInputChange('currency', e.target.value)}
+            >
+              {Object.values(CURRENCIES).map((c) => (
+                <MenuItem key={c.code} value={c.code}>{c.name} ({c.symbol})</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel>Member Type</InputLabel>
+            <Select
+              value={formData.type.toString()}
+              label="Member Type"
+              onChange={(e) => handleInputChange('type', parseInt(e.target.value))}
+            >
+              {Object.entries(MEMBER_TYPE).map(([key, value]) => (
+                <MenuItem key={value} value={value.toString()}>
+                  {key.charAt(0) + key.slice(1).toLowerCase()}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {!member?.id && (
+            <TextField
+              label="Membership Duration (months)"
+              type="number"
+              value={formData.months.toString()}
+              onChange={(e) => handleInputChange('months', parseInt(e.target.value))}
+              slotProps={{ htmlInput: { min: 1, max: 60 } }}
+              helperText="Number of months for this membership"
+              fullWidth
+            />
+          )}
+        </Box>
+      </Paper>
+
+      {/* Address */}
+      <Paper variant="outlined" sx={{ p: 3, borderRadius: '18px', bgcolor: 'background.warm', boxShadow: 'none' }}>
+        <Stack direction="row" spacing={1} sx={{ mb: 2.5, alignItems: 'center' }}>
+          <MapPin size={18} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Address</Typography>
+        </Stack>
+        <TextField
           label="Address"
           value={formData.address}
           onChange={(e) => handleInputChange('address', e.target.value)}
-          error={errors.address}
+          error={!!errors.address}
+          helperText={errors.address}
           placeholder="Enter member's full address"
+          multiline
+          minRows={2}
+          fullWidth
         />
-      </div>
+      </Paper>
 
-      {/* Form Actions */}
-      <div className="flex justify-end space-x-3">
+      {/* Actions */}
+      <Stack direction="row" spacing={1.5} sx={{ pt: 0.5, justifyContent: 'flex-end' }}>
         {onCancel && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
+          <Button variant="outlined" onClick={onCancel} disabled={isLoading}>Cancel</Button>
         )}
-        <Button
-          type="submit"
-          variant="primary"
-          loading={isLoading}
-        >
-          {member?.id ? 'Update Member' : 'Create Member'}
+        <Button type="submit" variant="contained" disabled={isLoading}>
+          {isLoading ? 'Saving...' : member?.id ? 'Update Member' : 'Create Member'}
         </Button>
-      </div>
-    </form>
+      </Stack>
+    </Box>
   );
 };

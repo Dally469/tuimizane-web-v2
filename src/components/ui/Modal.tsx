@@ -1,5 +1,6 @@
 import React from 'react';
 import { clsx } from 'clsx';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -28,47 +29,31 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Background overlay */}
         <div
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          className="fixed inset-0 bg-ink-900/45 backdrop-blur-sm transition-opacity"
           onClick={onClose}
         />
 
-        {/* Modal panel */}
         <div
           className={clsx(
-            'relative w-full transform rounded-lg bg-white p-6 shadow-xl transition-all',
+            'glass-panel relative w-full transform rounded-[28px] p-6 transition-all sm:p-7',
             sizeClasses[size]
           )}
         >
-          {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 text-gray-400 hover:text-gray-500"
+            className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl text-ink-400 hover:bg-slate-100 hover:text-ink-700"
+            aria-label="Close modal"
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="h-5 w-5" />
           </button>
 
-          {/* Header */}
           {title && (
-            <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+            <div className="mb-5">
+              <h3 className="text-xl font-bold text-ink-900">{title}</h3>
             </div>
           )}
 
-          {/* Content */}
           <div>{children}</div>
         </div>
       </div>

@@ -4,21 +4,21 @@ export const isValidEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-// Phone number validation (Rwandan format)
+// Phone number validation (Rwanda + DRC formats)
 export const isValidPhoneNumber = (phone: string): boolean => {
-  // Remove all non-digit characters
   const cleaned = phone.replace(/\D/g, '');
-  
-  // Check for Rwandan numbers: +2507xxxxxxxx or 07xxxxxxxx (9 digits after 07)
-  const rwandaRegex = /^2507\d{8}$|^07\d{8}$/;
-  return rwandaRegex.test(cleaned);
+  // Rwanda: +2507xxxxxxxx (12 digits) or 07xxxxxxxx (10 digits)
+  // DRC:    +243xxxxxxxxx (12 digits) or 0xxxxxxxxx (10 digits)
+  const rwandaRegex = /^(2507\d{8}|07\d{8})$/;
+  const drcRegex = /^(243\d{9}|0\d{9})$/;
+  return rwandaRegex.test(cleaned) || drcRegex.test(cleaned);
 };
 
-// ID number validation (Rwandan national ID format)
+// ID number validation (Rwanda 16-digit or general 6-20 digit/alphanumeric)
 export const isValidIdNumber = (idNumber: string): boolean => {
-  // Rwandan national ID is typically 16 digits
-  const idRegex = /^\d{16}$/;
-  return idRegex.test(idNumber);
+  const trimmed = idNumber.trim();
+  // Accept Rwanda 16-digit, DRC 9-digit, or any alphanumeric 6-20 chars
+  return /^[A-Za-z0-9]{6,20}$/.test(trimmed);
 };
 
 // Amount validation
@@ -29,7 +29,7 @@ export const isValidAmount = (amount: string | number): boolean => {
 
 // Currency validation
 export const isValidCurrency = (currency: string): boolean => {
-  const validCurrencies = ['RWF', 'USD', 'EUR', 'GBP'];
+  const validCurrencies = ['RWF', 'USD', 'CDF'];
   return validCurrencies.includes(currency.toUpperCase());
 };
 

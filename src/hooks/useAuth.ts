@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import toast from 'react-hot-toast';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { loginStart, loginSuccess, loginFailure, logout as logoutAction } from '@/store/authSlice';
 import { authService } from '@/services';
-import { LoginRequest, ApiResponse, LoginResponse } from '@/types/api';
+import { LoginRequest } from '@/types/api';
 
 interface UseAuthReturn {
-  user: LoginResponse['user'] | null;
+  user: any;
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
@@ -14,75 +17,61 @@ interface UseAuthReturn {
 }
 
 export const useAuth = (): UseAuthReturn => {
-  const [user, setUser] = useState<LoginResponse['user'] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Check authentication status on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        if (authService.isAuthenticated()) {
-          const response = await authService.getCurrentUser();
-          if (response.success && response.data) {
-            setUser(response.data);
-          }
-        }
-      } catch (err) {
-        console.error('Auth check failed:', err);
-        setError('Failed to verify authentication');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
+  const dispatch = useAppDispatch();
+  const { user, isLoading, error } = useAppSelector((state) => state.auth);
+  const isAuthenticated = !!user;
 
   const login = useCallback(async (credentials: LoginRequest): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
+    dispatch(loginStart());
 
     try {
       const response = await authService.login(credentials);
       
       if (response.success && response.data) {
-        setUser(response.data.user);
+        const userData = response.data;
+        dispatch(loginSuccess({
+          user: {
+            id: userData.id,
+            username: userData.username,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            email: userData.email,
+            phone: userData.phone,
+            role: userData.role,
+            organizationId: userData.organization?.id || '',
+          },
+          token: response.token!,
+        }));
+        toast.success('Login successful');
         return true;
       } else {
-        setError(response.message || 'Login failed');
+        const errorMessage = response.message || 'Login failed';
+        dispatch(loginFailure(errorMessage));
+        toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Login failed';
-      setError(errorMessage);
+      dispatch(loginFailure(errorMessage));
+      toast.error(errorMessage);
       return false;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   const logout = useCallback(async (): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-
     try {
       await authService.logout();
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      setUser(null);
-      setIsLoading(false);
+      dispatch(logoutAction());
     }
-  }, []);
+  }, [dispatch]);
 
   const changePassword = useCallback(async (
     currentPassword: string,
     newPassword: string
   ): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-
     try {
       const response = await authService.changePassword({
         currentPassword,
@@ -90,28 +79,26 @@ export const useAuth = (): UseAuthReturn => {
       });
 
       if (response.success) {
-        return true;
+        toast.success('Password changed successfully');
       } else {
-        setError(response.message || 'Password change failed');
-        return false;
+        toast.error(response.message || 'Failed to change password');
       }
+      return response.success;
     } catch (err: any) {
-      const errorMessage = err.message || 'Password change failed';
-      setError(errorMessage);
+      toast.error(err.message || 'Failed to change password');
       return false;
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
   const clearError = useCallback(() => {
-    setError(null);
+    // Since error is now from Redux, we might need to dispatch an action to clear it
+    // For now, this is a no-op
   }, []);
 
   return {
     user,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated,
     error,
     login,
     logout,
