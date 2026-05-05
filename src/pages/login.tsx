@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, BarChart3, CalendarDays, ShieldCheck, Wallet } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginStart, loginSuccess, loginFailure } from '@/store/authSlice';
 import { LoginRequest } from '@/types/api';
@@ -27,6 +27,19 @@ export default function Login() {
     username: '',
     password: '',
   });
+
+  const contributionMetrics = [
+    { label: 'Collected this week', value: '82%', width: '82%', delay: '0.1s' },
+    { label: 'Member contribution rate', value: '91%', width: '91%', delay: '0.2s' },
+    { label: 'Pending follow-ups', value: '24%', width: '24%', delay: '0.3s' },
+  ];
+
+  const seasonPayouts = [
+    { label: 'Week 1', amount: 'TZS 240,000', status: 'done' },
+    { label: 'Week 2', amount: 'TZS 240,000', status: 'done' },
+    { label: 'Week 3', amount: 'TZS 240,000', status: 'active' },
+    { label: 'Week 4', amount: 'TZS 240,000', status: 'next' },
+  ] as const;
 
   const canSubmit = Boolean(formData.username && formData.password) && !isLoading;
 
@@ -68,91 +81,130 @@ export default function Login() {
   return (
     <Box className="relative min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
       <Box className="absolute inset-0 -z-10">
-        <Box className="absolute left-[-10%] top-12 h-72 w-72 rounded-full bg-primary-300/35 blur-3xl" />
-        <Box className="absolute right-[-8%] top-0 h-80 w-80 rounded-full bg-accent-300/35 blur-3xl" />
-        <Box className="absolute bottom-[-5%] left-1/3 h-64 w-64 rounded-full bg-amber-200/40 blur-3xl" />
-        <Box className="absolute inset-0 bg-hero-grid bg-[size:42px_42px] opacity-[0.05]" />
+        <Box className="absolute left-[-8%] top-12 h-72 w-72 rounded-full bg-orange-200/50 blur-3xl" />
+        <Box className="absolute right-[-8%] top-0 h-80 w-80 rounded-full bg-amber-100/70 blur-3xl" />
+        <Box className="absolute inset-0 bg-hero-grid bg-size-[38px_38px] opacity-[0.04]" />
       </Box>
 
-      <Box className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <Box className="hidden lg:block">
-          <Box className="max-w-2xl">
-            <Chip
-              icon={<Sparkles size={16} />}
-              label="Orange-first workspace for modern ROSCA operations"
-              color="primary"
-              variant="outlined"
-              sx={{
-                px: 1.5,
-                py: 2.75,
-                bgcolor: 'rgba(255,255,255,0.72)',
-                borderColor: 'rgba(255,255,255,0.85)',
-              }}
-            />
-
-            <Typography variant="h1" sx={{ mt: 4, maxWidth: 620, fontSize: { xs: 40, lg: 58 }, lineHeight: 1.02 }}>
-              A warmer, clearer way to manage contribution cycles and payouts.
+      <Box className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-6 lg:grid-cols-[1fr_0.88fr] lg:gap-10">
+        <Box>
+          <Box sx={{ maxWidth: 640 }}>
+            <Typography sx={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.26em', textTransform: 'uppercase', color: 'text.secondary' }}>
+              Tuimizane insights
+            </Typography>
+            <Typography variant="h1" sx={{ mt: 2, fontSize: { xs: 34, sm: 44, lg: 52 }, lineHeight: 1.08 }}>
+              Contribution metrics and season payout, in one clear view.
+            </Typography>
+            <Typography sx={{ mt: 2.5, maxWidth: 560, fontSize: 16, lineHeight: 1.8, color: 'text.secondary' }}>
+              Minimal by design, but still informative. Follow contribution momentum and payout status before entering the dashboard.
             </Typography>
 
-            <Typography sx={{ mt: 3, maxWidth: 580, fontSize: 18, lineHeight: 1.8, color: 'text.secondary' }}>
-              Tuimizane now leans into a more confident orange system with calmer surfaces, stronger hierarchy, and better focus on the workflows that matter every week.
-            </Typography>
-
-            <Box className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-3">
-              {[
-                { label: 'Payout rhythm', value: 'Always visible' },
-                { label: 'Member follow-up', value: 'Less clutter' },
-                { label: 'Season control', value: 'Orange-led UI' },
-              ].map((item) => (
-                <Card
-                  key={item.label}
-                  sx={{
-                    borderRadius: '18px',
-                    bgcolor: 'rgba(255,255,255,0.72)',
-                  }}
-                >
-                  <CardContent sx={{ p: 3.5 }}>
-                    <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'text.secondary' }}>
-                      {item.label}
-                    </Typography>
-                    <Typography variant="h6" sx={{ mt: 1.5, fontWeight: 800 }}>
-                      {item.value}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))}
-            </Box>
-
-            <Box className="mt-12 grid max-w-2xl gap-4 sm:grid-cols-2">
+            <Box className="mt-6 grid gap-4 sm:grid-cols-2">
               <Card
                 sx={{
-                  borderRadius: '20px',
-                  background: 'linear-gradient(155deg, #2f1d11 0%, #6b3411 55%, #c2410c 100%)',
-                  color: 'white',
+                  borderRadius: '18px',
+                  bgcolor: 'rgba(255,255,255,0.84)',
+                  border: '1px solid',
+                  borderColor: 'rgba(255,255,255,0.95)',
+                  boxShadow: '0 16px 35px -24px rgba(15,23,42,0.35)',
+                  '@keyframes fillTrack': {
+                    from: { width: 0 },
+                    to: { width: 'var(--target-width)' },
+                  },
                 }}
               >
-                <CardContent sx={{ p: 4 }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.72)' }}>
-                    Circle health
-                  </Typography>
-                  <Typography sx={{ mt: 1.5, fontSize: 42, fontWeight: 800 }}>98%</Typography>
-                  <Typography sx={{ mt: 1.5, fontSize: 14, lineHeight: 1.8, color: 'rgba(255,255,255,0.72)' }}>
-                    A more intentional interface for active members, upcoming payouts, and season-wide payment momentum.
-                  </Typography>
+                <CardContent sx={{ p: 3.25 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 2 }}>
+                    <BarChart3 size={16} />
+                    <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Contribution metrics</Typography>
+                  </Box>
+                  <Box sx={{ display: 'grid', gap: 1.6 }}>
+                    {contributionMetrics.map((metric) => (
+                      <Box key={metric.label}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.6 }}>
+                          <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{metric.label}</Typography>
+                          <Typography sx={{ fontSize: 12.5, fontWeight: 700 }}>{metric.value}</Typography>
+                        </Box>
+                        <Box sx={{ height: 8, borderRadius: 999, bgcolor: 'rgba(148,163,184,0.18)', overflow: 'hidden' }}>
+                          <Box
+                            sx={{
+                              '--target-width': metric.width,
+                              height: '100%',
+                              borderRadius: 999,
+                              background: 'linear-gradient(90deg, #ea580c 0%, #fb923c 100%)',
+                              animationName: 'fillTrack',
+                              animationDuration: '1.1s',
+                              animationDelay: metric.delay,
+                              animationFillMode: 'both',
+                              animationTimingFunction: 'ease-out',
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
                 </CardContent>
               </Card>
 
-              <Card sx={{ borderRadius: '20px', bgcolor: 'rgba(255,255,255,0.74)' }}>
-                <CardContent sx={{ p: 4 }}>
-                  <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'text.secondary' }}>
-                    Featured workflow
-                  </Typography>
-                  <Typography variant="h5" sx={{ mt: 1.5, fontWeight: 800 }}>
-                    Monday payout review
-                  </Typography>
-                  <Typography sx={{ mt: 1.5, fontSize: 14, lineHeight: 1.8, color: 'text.secondary' }}>
-                    Open the dashboard and immediately see who is next, what is pending, and where the season stands.
-                  </Typography>
+              <Card
+                sx={{
+                  borderRadius: '18px',
+                  background: 'linear-gradient(160deg, #2f1d11 0%, #7c2d12 58%, #ea580c 100%)',
+                  color: 'white',
+                  '@keyframes pulseDot': {
+                    '0%': { transform: 'scale(1)', opacity: 0.9 },
+                    '70%': { transform: 'scale(1.65)', opacity: 0 },
+                    '100%': { transform: 'scale(1.65)', opacity: 0 },
+                  },
+                }}
+              >
+                <CardContent sx={{ p: 3.25 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 2 }}>
+                    <CalendarDays size={16} />
+                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.86)' }}>Season payout</Typography>
+                  </Box>
+                  <Box sx={{ display: 'grid', gap: 1.25 }}>
+                    {seasonPayouts.map((item) => (
+                      <Box
+                        key={item.label}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          borderRadius: '10px',
+                          px: 1.2,
+                          py: 1,
+                          bgcolor: item.status === 'active' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ position: 'relative', width: 10, height: 10 }}>
+                            <Box
+                              sx={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                bgcolor: item.status === 'done' ? '#fdba74' : item.status === 'active' ? '#fef3c7' : 'rgba(255,255,255,0.42)',
+                              }}
+                            />
+                            {item.status === 'active' && (
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  inset: 0,
+                                  borderRadius: '50%',
+                                  border: '2px solid #fef3c7',
+                                  animation: 'pulseDot 1.8s infinite',
+                                }}
+                              />
+                            )}
+                          </Box>
+                          <Typography sx={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{item.label}</Typography>
+                        </Box>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{item.amount}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
                 </CardContent>
               </Card>
             </Box>
@@ -160,34 +212,38 @@ export default function Login() {
         </Box>
 
         <Box className="mx-auto w-full max-w-xl">
-          <Card sx={{ borderRadius: '24px', bgcolor: 'rgba(255,255,255,0.82)' }}>
+          <Card
+            sx={{
+              borderRadius: '22px',
+              bgcolor: 'rgba(255,255,255,0.9)',
+              border: '1px solid',
+              borderColor: 'rgba(255,255,255,0.95)',
+              boxShadow: '0 24px 40px -30px rgba(15,23,42,0.45)',
+            }}
+          >
             <CardContent sx={{ p: { xs: 3.5, sm: 4.5 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
                 <Box>
                   <Box
+                    component="img"
+                    src="/assets/logo_dashboard.png"
+                    alt="Tuimizane logo"
                     sx={{
                       display: 'inline-flex',
-                      height: 56,
-                      width: 56,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '14px',
-                      background: 'linear-gradient(135deg, #2f1d11 0%, #ea580c 56%, #fb923c 100%)',
-                      color: 'white',
-                      fontWeight: 800,
-                      boxShadow: '0 18px 40px -20px rgba(249,115,22,0.55)',
+                      // height: 152,
+                      width: 202,
+                      borderRadius: '12px',
+                      // boxShadow: '0 16px 34px -24px rgba(249,115,22,0.55)',
                     }}
-                  >
-                    T
-                  </Box>
+                  />
                   <Typography sx={{ mt: 3, fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.28em', color: 'text.secondary' }}>
                     Tuimizane portal
                   </Typography>
-                  <Typography variant="h2" sx={{ mt: 1.5, fontSize: { xs: 34, sm: 42 } }}>
+                  <Typography variant="h2" sx={{ mt: 1.5, fontSize: { xs: 32, sm: 38 } }}>
                     Sign in
                   </Typography>
-                  <Typography sx={{ mt: 1.5, fontSize: 14, lineHeight: 1.8, color: 'text.secondary' }}>
-                    Access the orange-themed workspace to review season progress, member activity, and upcoming payouts.
+                  <Typography sx={{ mt: 1.2, fontSize: 14, lineHeight: 1.8, color: 'text.secondary' }}>
+                    Secure login for members, contributions, and payout operations.
                   </Typography>
                 </Box>
 
@@ -199,29 +255,16 @@ export default function Login() {
                 />
               </Box>
 
-              <Box className="mt-8 grid gap-3 sm:grid-cols-2">
-                <Card sx={{ borderRadius: '18px', bgcolor: 'background.warm', boxShadow: 'none' }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'text.primary' }}>
-                      Cleaner sign-in flow
-                    </Typography>
-                    <Typography sx={{ mt: 1, fontSize: 13, lineHeight: 1.8, color: 'text.secondary' }}>
-                      The form now uses MUI controls and a warmer palette for better contrast and consistency.
-                    </Typography>
-                  </CardContent>
-                </Card>
-
-                <Card sx={{ borderRadius: '18px', bgcolor: '#2f1d11', color: 'white', boxShadow: 'none' }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.78)' }}>
-                      Quick note
-                    </Typography>
-                    <Typography sx={{ mt: 1, fontSize: 13, lineHeight: 1.8, color: 'rgba(255,255,255,0.72)' }}>
-                      Use the credentials issued by your organization administrator to access this portal.
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Box>
+              {/* <Box className="mt-7 grid gap-3 sm:grid-cols-2">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, borderRadius: '12px', bgcolor: 'background.warm', px: 2, py: 1.5 }}>
+                  <BarChart3 size={16} />
+                  <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>Live contribution context</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, borderRadius: '12px', bgcolor: 'background.warm', px: 2, py: 1.5 }}>
+                  <Wallet size={16} />
+                  <Typography sx={{ fontSize: 13.5, color: 'text.secondary' }}>Season payout progress</Typography>
+                </Box>
+              </Box> */}
 
               <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4 }}>
                 <Box sx={{ display: 'grid', gap: 2.5 }}>
@@ -249,9 +292,7 @@ export default function Login() {
 
                   {error && <Alert severity="error">{error}</Alert>}
 
-                  <Box
-                    sx={{ py: 1, borderTop: '1px solid', borderBottom: '1px solid', borderColor: 'divider' }}
-                  >
+                  <Box sx={{ py: 1, borderTop: '1px solid', borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2 }}>
                       <FormControlLabel
                         control={<Checkbox color="primary" />}
@@ -267,19 +308,7 @@ export default function Login() {
                     {isLoading ? 'Signing in...' : 'Enter dashboard'}
                   </Button>
 
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      borderRadius: '18px',
-                      bgcolor: 'background.warm',
-                      px: 2.5,
-                      py: 2,
-                      gap: 2,
-                    }}
-                  >
+                  <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderRadius: '14px', bgcolor: 'background.warm', px: 2.5, py: 1.8, gap: 2 }}>
                     <Typography sx={{ fontSize: 14, color: 'text.secondary' }}>Need an account?</Typography>
                     <Typography component="a" href="#" sx={{ fontSize: 14, fontWeight: 700, color: 'text.primary', textDecoration: 'none' }}>
                       Contact your administrator

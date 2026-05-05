@@ -421,16 +421,25 @@ export interface WorkingDaysCalendarDTO {
 export interface MemberDebitAnalysisDTO {
   memberId: string;
   memberNames: string;
+  memberPhone?: string;
+  memberCurrency?: string;
   totalWorkingDays: number;
+  expectedWorkingDays?: number;
+  actualContributedDays?: number;
   paidDays: number;
   unpaidDays: number;
   debitDays: number;
   debitAmount: number;
+  actualContributedAmount?: number;
+  expectedTotalAmount?: number;
   contributionRate: number;
   currency: string;
   dailyRate: number;
+  dailyContributionAmount?: number;
   month: number;
   year: number;
+  dailyWorkingDayDetails?: DailyWorkingDayDetail[];
+  contributions?: MemberContributionDetail[];
 }
 
 export interface PayDebitRequestDTO {

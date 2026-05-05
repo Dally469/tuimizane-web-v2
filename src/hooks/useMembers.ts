@@ -22,7 +22,13 @@ interface UseMembersReturn {
   isUploading: boolean;
   uploadProgress: number;
   error: string | null;
-  fetchMembers: () => Promise<void>;
+  fetchMembers: (options?: {
+    page?: number;
+    size?: number;
+    sortBy?: string;
+    sortDirection?: 'asc' | 'desc';
+    setTotalPages?: (n: number) => void;
+  }) => Promise<void>;
   getMemberById: (id: string) => Promise<Member | null>;
   getMemberDetail: (id: string) => Promise<TopDefaulterDTO | null>;
   createMember: (member: Partial<Member>, months: number) => Promise<Member | null>;
@@ -55,27 +61,45 @@ export const useMembers = (): UseMembersReturn => {
     setError(null);
   }, []);
 
-  const fetchMembers = useCallback(async (): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await memberService.getAllMembers();
-      
-      if (response.success) {
-        setMembers(Array.isArray(response.data) ? response.data : []);
-      } else {
-        setError(response.message || 'Failed to fetch members');
+  /**
+   * Fetch paginated members
+   * @param options { page, size, sortBy, sortDirection, setTotalPages }
+   */
+  const fetchMembers = useCallback(
+    async (options?: {
+      page?: number;
+      size?: number;
+      sortBy?: string;
+      sortDirection?: 'asc' | 'desc';
+      setTotalPages?: (n: number) => void;
+    }): Promise<void> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const page = options?.page ?? 0;
+        const size = options?.size ?? 20;
+        const sortBy = options?.sortBy ?? 'names';
+        const sortDirection = options?.sortDirection ?? 'asc';
+        const response = await memberService.getAllMembers({ page, size, sortBy, sortDirection });
+        if (response.success && response.data) {
+          setMembers(Array.isArray(response.data.content) ? response.data.content : []);
+          if (options?.setTotalPages && typeof response.data.totalPages === 'number') {
+            options.setTotalPages(response.data.totalPages);
+          }
+        } else {
+          setError(response.message || 'Failed to fetch members');
+          setMembers([]);
+        }
+      } catch (err: any) {
+        const errorMessage = err.message || 'Failed to fetch members';
+        setError(errorMessage);
         setMembers([]);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to fetch members';
-      setError(errorMessage);
-      setMembers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const getMemberById = useCallback(async (id: string): Promise<Member | null> => {
     setIsLoading(true);

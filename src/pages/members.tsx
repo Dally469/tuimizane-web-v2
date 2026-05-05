@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tabs, Tab, Pagination } from '@mui/material';
 import {
   Alert,
   Avatar,
@@ -42,7 +43,7 @@ import { MemberForm } from '@/components/members/MemberForm';
 import { MemberDetailsDialog } from '@/components/members/MemberDetailsDialog';
 import { useMembers } from '@/hooks';
 import { formatCurrency, formatDate, formatMemberType, formatPhoneNumber } from '@/utils/format';
-import { MEMBER_STATUS, MEMBER_TYPE } from '@/utils/constants';
+import { MEMBER_STATUS, MEMBER_TYPE, API_ENDPOINTS } from '@/utils/constants';
 import type { MemberDTO } from '@/types/api';
 
 type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
@@ -70,7 +71,8 @@ export default function MembersPage() {
   } = useMembers();
 
   const [query, setQuery] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('ALL');
+  // Tabbed status: 1 = Active, 0 = Inactive
+  const [tabStatus, setTabStatus] = React.useState<number>(1); // Default to Active
   const [typeFilter, setTypeFilter] = React.useState<TypeFilter>('ALL');
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [editingMemberId, setEditingMemberId] = React.useState<string | null>(null);
@@ -78,22 +80,34 @@ export default function MembersPage() {
   const [deleteTarget, setDeleteTarget] = React.useState<MemberDTO | null>(null);
   const [isUploadOpen, setIsUploadOpen] = React.useState(false);
   const [uploadFile, setUploadFile] = React.useState<File | null>(null);
+  const [page, setPage] = React.useState(1); // 1-based for UI
+  const [pageSize, setPageSize] = React.useState(21);
+  const [totalPages, setTotalPages] = React.useState(1);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const safeMembers = Array.isArray(members) ? members : [];
 
+
+
+  // Fetch paginated members (single source of truth)
   React.useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers]);
+    fetchMembers({
+      page: page - 1,
+      size: pageSize,
+      setTotalPages,
+    });
+  }, [page, pageSize, fetchMembers]);
 
   // --- Derived data ---
-  const activeCount = safeMembers.filter((m) => m.status === 'ACTIVE').length;
-  const inactiveCount = safeMembers.filter((m) => m.status === 'INACTIVE').length;
-  const suspendedCount = safeMembers.filter((m) => m.status === 'SUSPENDED').length;
+  const activeCount = safeMembers.filter((m) => Number(m.status) === 1).length;
+  const inactiveCount = safeMembers.filter((m) => Number(m.status) === 0).length;
   const totalContribution = safeMembers.reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
 
   const filteredMembers = safeMembers.filter((member) => {
-    if (statusFilter !== 'ALL' && member.status !== statusFilter) return false;
+    // Tabbed status filtering (Active/Inactive)
+    if (tabStatus === 1 && Number(member.status) !== 1) return false;
+    if (tabStatus === 0 && Number(member.status) !== 0) return false;
+    // If typeFilter is 'ALL', show all Vision types for the status
     if (typeFilter !== 'ALL' && member.type !== typeFilter) return false;
     if (!query) return true;
     const term = query.toLowerCase();
@@ -186,8 +200,8 @@ export default function MembersPage() {
             icon={<UserCheck size={20} color="#fff" />}
           />
           <StatCard
-            label="Inactive / Suspended"
-            value={inactiveCount + suspendedCount}
+            label="Inactive"
+            value={inactiveCount}
             color="warning.main"
             icon={<UserMinus size={20} color="#fff" />}
           />
@@ -245,241 +259,260 @@ export default function MembersPage() {
             </Stack>
           </Box>
 
-          {/* Status filter chips */}
-          <Box sx={{ mt: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
-            <Box>
-              <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'text.secondary', mb: 0.75 }}>Status</Typography>
-              <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', gap: 0.75 }}>
-                {(['ALL', 'ACTIVE', 'INACTIVE', 'SUSPENDED'] as StatusFilter[]).map((s) => (
-                  <Chip
-                    key={s}
-                    label={s === 'ALL' ? `All (${safeMembers.length})` : `${s.charAt(0)}${s.slice(1).toLowerCase()} (${safeMembers.filter((m) => m.status === s).length})`}
-                    variant={statusFilter === s ? 'filled' : 'outlined'}
-                    color={
-                      s === 'ACTIVE'
-                        ? 'success'
-                        : s === 'SUSPENDED'
-                          ? 'error'
-                          : s === 'INACTIVE'
-                            ? 'warning'
-                            : 'primary'
-                    }
-                    onClick={() => setStatusFilter(s)}
-                    size="small"
-                    sx={{ fontWeight: 700 }}
-                  />
-                ))}
-              </Stack>
-            </Box>
+          {/* Tabbed status filter */}
+          <Box sx={{ mt: 2, mb: 1 }}>
+            <Tabs
+              value={tabStatus}
+              onChange={(_e, v) => setTabStatus(v)}
+              aria-label="Member status tabs"
+              textColor="primary"
+              indicatorColor="primary"
+              sx={{
+                minHeight: 44,
+                '& .MuiTab-root': { fontWeight: 800, fontSize: 15, minHeight: 44 },
+              }}
+            >
+              <Tab
+                label={`Active (${activeCount})`}
+                value={1}
+                sx={{ color: tabStatus === 1 ? 'success.main' : undefined }}
+              />
+              <Tab
+                label={`Inactive (${inactiveCount})`}
+                value={0}
+                sx={{ color: tabStatus === 0 ? 'warning.main' : undefined }}
+              />
+            </Tabs>
+          </Box>
 
-            <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', sm: 'block' } }} />
-
-            <Box>
-              <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'text.secondary', mb: 0.75 }}>Type</Typography>
-              <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', gap: 0.75 }}>
+          {/* Type filter chips */}
+          {/* <Box sx={{ mb: 2, display: 'flex', gap: 1.5 }}>
+            <Typography sx={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'text.secondary', mb: 0.75, alignSelf: 'center' }}>Type</Typography>
+            <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', gap: 0.75 }}>
+              <Chip
+                label={`All (${safeMembers.length})`}
+                variant={typeFilter === 'ALL' ? 'filled' : 'outlined'}
+                color="primary"
+                onClick={() => setTypeFilter('ALL')}
+                size="small"
+                sx={{ fontWeight: 700 }}
+              />
+              {Object.entries(MEMBER_TYPE).map(([key, value]) => (
                 <Chip
-                  label={`All (${safeMembers.length})`}
-                  variant={typeFilter === 'ALL' ? 'filled' : 'outlined'}
-                  color="primary"
-                  onClick={() => setTypeFilter('ALL')}
+                  key={value}
+                  label={`${formatMemberType(value)} (${safeMembers.filter((m) => m.type === value).length})`}
+                  variant={typeFilter === value ? 'filled' : 'outlined'}
+                  color="secondary"
+                  onClick={() => setTypeFilter(value)}
                   size="small"
                   sx={{ fontWeight: 700 }}
                 />
-                {Object.entries(MEMBER_TYPE).map(([key, value]) => (
-                  <Chip
-                    key={value}
-                    label={`${formatMemberType(value)} (${safeMembers.filter((m) => m.type === value).length})`}
-                    variant={typeFilter === value ? 'filled' : 'outlined'}
-                    color="secondary"
-                    onClick={() => setTypeFilter(value)}
-                    size="small"
-                    sx={{ fontWeight: 700 }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          </Box>
+              ))}
+            </Stack>
+          </Box> */}
         </Paper>
 
         {error && <Alert severity="error">{error}</Alert>}
 
         {/* ---- Loading indicator ---- */}
         {isLoading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 320, width: '100%' }}>
             <CircularProgress />
           </Box>
         )}
 
         {/* ---- Member cards grid ---- */}
         {!isLoading && filteredMembers.length > 0 && (
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 2,
-              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' },
-            }}
-          >
-            {filteredMembers.map((member) => (
-              <Paper key={member.id} sx={{ borderRadius: '20px', p: 3, position: 'relative' }}>
-                {/* Top row: avatar + name + chips */}
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-                  <Avatar
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      bgcolor:
-                        member.status === 'ACTIVE' ? 'primary.main' : 'action.disabledBackground',
-                      fontSize: 16,
-                      fontWeight: 800,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {initials(member.names)}
-                  </Avatar>
+          <>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' },
+                width: '100%',
+                margin: 0,
+                overflowX: 'hidden',
+              }}
+            >
+              {filteredMembers.map((member) => (
+                <Paper key={member.id} sx={{ borderRadius: '20px', p: 3, position: 'relative', minWidth: 0, overflow: 'hidden', width: '100%' }}>
+                  {/* Top row: avatar + name + chips */}
+                  <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', flexWrap: 'wrap', minWidth: 0 }}>
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        bgcolor: Number(member.status) === 1 ? 'success.main' : 'warning.main',
+                        fontSize: 16,
+                        fontWeight: 800,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {initials(member.names)}
+                    </Avatar>
 
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ fontSize: 18, fontWeight: 800, lineHeight: 1.3 }} noWrap>
-                      {member.names}
-                    </Typography>
-                    <Stack direction="row" spacing={0.5} sx={{ mt: 0.75, flexWrap: 'wrap', gap: 0.5 }}>
-                      <Chip
-                        label={member.status}
-                        size="small"
-                        color={
-                          member.status === 'ACTIVE'
-                            ? 'success'
-                            : member.status === 'SUSPENDED'
-                              ? 'error'
-                              : 'default'
-                        }
-                      />
-                      <Chip label={formatMemberType(member.type)} size="small" variant="outlined" />
-                      {member.card && (
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography sx={{ fontSize: 18, fontWeight: 800, lineHeight: 1.3 }} noWrap>
+                        {member.names}
+                      </Typography>
+                      <Stack direction="row" spacing={0.5} sx={{ mt: 0.75, flexWrap: 'wrap', gap: 0.5 }}>
                         <Chip
-                          icon={<CreditCard size={12} />}
-                          label={member.card}
+                          label={
+                            Number(member.status) === 0 ? 'Inactive' :
+                            Number(member.status) === 1 ? 'Active' :
+                           
+                            'Unknown'
+                          }
                           size="small"
                           variant="outlined"
-                          color="primary"
+                          color={
+                            Number(member.status) === 0 ? 'secondary' :
+                            Number(member.status) === 1 ? 'success' :
+                            'default'
+                          }
+                          sx={{ fontWeight: 700 }}
                         />
-                      )}
-                    </Stack>
+                        <Chip label={formatMemberType(member.type)} size="small" variant="outlined" />
+                        {member.card && (
+                          <Chip
+                            icon={<CreditCard size={12} />}
+                            label={member.card}
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                          />
+                        )}
+                      </Stack>
+                    </Box>
                   </Box>
-                </Box>
 
-                {/* Contact info */}
-                <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                    <Phone size={14} color="#888" />
-                    <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
-                      {formatPhoneNumber(member.phone)}
-                    </Typography>
-                  </Box>
-                  {member.address && (
+                  {/* Contact info */}
+                  <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <MapPin size={14} color="#888" />
-                      <Typography sx={{ fontSize: 13, color: 'text.secondary' }} noWrap>
-                        {member.address}
+                      <Phone size={14} color="#888" />
+                      <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
+                        {formatPhoneNumber(member.phone)}
                       </Typography>
                     </Box>
-                  )}
-                </Box>
+                    {member.address && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <MapPin size={14} color="#888" />
+                        <Typography sx={{ fontSize: 13, color: 'text.secondary' }} noWrap>
+                          {member.address}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
 
-                {/* Contribution + Joined stats */}
-                <Box
-                  sx={{
-                    mt: 2,
-                    display: 'grid',
-                    gap: 1.5,
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                  }}
-                >
-                  <Paper
+                  {/* Contribution + Joined stats */}
+                  <Box
                     sx={{
-                      p: 2,
-                      borderRadius: '14px',
-                      bgcolor: 'primary.soft',
-                      boxShadow: 'none',
+                      mt: 2,
+                      display: 'grid',
+                      gap: 1.5,
+                      gridTemplateColumns: 'repeat(2, 1fr)',
                     }}
                   >
-                    <Typography
+                    <Paper
                       sx={{
-                        fontSize: 11,
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.14em',
-                        color: 'text.secondary',
+                        p: 2,
+                        borderRadius: '14px',
+                        bgcolor: 'primary.soft',
+                        boxShadow: 'none',
                       }}
                     >
-                      Contribution
-                    </Typography>
-                    <Typography sx={{ mt: 0.75, fontSize: 17, fontWeight: 800 }}>
-                      {formatCurrency(member.amount, member.currency)}
-                    </Typography>
-                  </Paper>
-                  <Paper
-                    sx={{
-                      p: 2,
-                      borderRadius: '14px',
-                      bgcolor: 'background.warm',
-                      boxShadow: 'none',
-                    }}
-                  >
-                    <Typography
+                      <Typography
+                        sx={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.14em',
+                          color: 'text.secondary',
+                        }}
+                      >
+                        Contribution
+                      </Typography>
+                      <Typography sx={{ mt: 0.75, fontSize: 17, fontWeight: 800 }}>
+                        {formatCurrency(member.amount, member.currency)}
+                      </Typography>
+                    </Paper>
+                    <Paper
                       sx={{
-                        fontSize: 11,
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.14em',
-                        color: 'text.secondary',
+                        p: 2,
+                        borderRadius: '14px',
+                        bgcolor: 'background.warm',
+                        boxShadow: 'none',
                       }}
                     >
-                      Joined
-                    </Typography>
-                    <Typography sx={{ mt: 0.75, fontSize: 17, fontWeight: 800 }}>
-                      {member.startDate ? formatDate(member.startDate) : 'Not set'}
-                    </Typography>
-                  </Paper>
-                </Box>
+                      <Typography
+                        sx={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.14em',
+                          color: 'text.secondary',
+                        }}
+                      >
+                        Joined
+                      </Typography>
+                      <Typography sx={{ mt: 0.75, fontSize: 17, fontWeight: 800 }}>
+                        {member.startDate ? formatDate(member.startDate) : 'Not set'}
+                      </Typography>
+                    </Paper>
+                  </Box>
 
-                <Divider sx={{ my: 2 }} />
+                  <Divider sx={{ my: 2 }} />
 
-                {/* Action buttons */}
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    startIcon={<Eye size={14} />}
-                    onClick={() => setViewingMemberId(member.id)}
-                  >
-                    View
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<Edit3 size={14} />}
-                    onClick={() => setEditingMemberId(member.id)}
-                  >
-                    Edit
-                  </Button>
-                  <Tooltip title="Delete member">
-                    <IconButton
+                  {/* Action buttons */}
+                  <Stack direction="row" spacing={1}>
+                    <Button
                       size="small"
-                      color="error"
-                      onClick={() => setDeleteTarget(member)}
+                      variant="contained"
+                      startIcon={<Eye size={14} />}
+                      onClick={() => setViewingMemberId(member.id)}
                     >
-                      <Trash2 size={16} />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              </Paper>
-            ))}
-          </Box>
+                      View
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<Edit3 size={14} />}
+                      onClick={() => setEditingMemberId(member.id)}
+                    >
+                      Edit
+                    </Button>
+                    <Tooltip title="Delete member">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => setDeleteTarget(member)}
+                      >
+                        <Trash2 size={16} />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                </Paper>
+              ))}
+            </Box>
+            {/* Pagination controls */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_e, value) => setPage(value)}
+                color="primary"
+                shape="rounded"
+                size="large"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          </>
         )}
 
         {/* ---- Empty state ---- */}
         {!isLoading && filteredMembers.length === 0 && (
-          <Paper sx={{ borderRadius: '24px', p: 6, textAlign: 'center', bgcolor: 'background.warm' }}>
+          <Paper sx={{ borderRadius: '24px', p: 6, textAlign: 'center', bgcolor: 'background.warm', width: '100%', minWidth: 0, overflow: 'hidden' }}>
             <Avatar
               sx={{
                 width: 56,
@@ -491,14 +524,14 @@ export default function MembersPage() {
               <UserPlus size={26} />
             </Avatar>
             <Typography sx={{ mt: 2.5, fontSize: 22, fontWeight: 800 }}>
-              {query || statusFilter !== 'ALL' || typeFilter !== 'ALL' ? 'No matching members' : 'No members yet'}
+              {query || typeFilter !== 'ALL' ? 'No matching members' : 'No members yet'}
             </Typography>
             <Typography sx={{ mt: 1, fontSize: 14, color: 'text.secondary', maxWidth: 380, mx: 'auto' }}>
-              {query || statusFilter !== 'ALL' || typeFilter !== 'ALL'
+              {query || typeFilter !== 'ALL'
                 ? 'Try adjusting your search or filter criteria.'
                 : 'Start by adding a new member to the savings circle.'}
             </Typography>
-            {!query && statusFilter === 'ALL' && typeFilter === 'ALL' && (
+            {!query && typeFilter === 'ALL' && (
               <Stack direction="row" spacing={1.5} sx={{ mt: 3, justifyContent: 'center' }}>
                 <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
                   Add member

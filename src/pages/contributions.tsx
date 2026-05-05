@@ -358,20 +358,26 @@ export default function ContributionsPage() {
 
   const dayStatusColor = (status: string) => {
     switch (status) {
-      case 'PAID': return 'success.main';
-      case 'UNPAID': return 'warning.main';
+      case 'PAID':
+      case 'CONTRIBUTED': return 'success.main';
+      case 'UNPAID':
+      case 'MISSED': return 'error.main';
       case 'DEBIT': return 'error.main';
-      case 'FUTURE': return 'action.disabled';
+      case 'FUTURE': return 'text.disabled';
+      case 'HOLIDAY': return 'text.disabled';
       default: return 'text.secondary';
     }
   };
 
   const dayStatusBg = (status: string) => {
     switch (status) {
-      case 'PAID': return 'success.soft';
-      case 'UNPAID': return 'warning.soft';
+      case 'PAID':
+      case 'CONTRIBUTED': return 'success.soft';
+      case 'UNPAID':
+      case 'MISSED': return 'error.soft';
       case 'DEBIT': return 'error.soft';
       case 'FUTURE': return 'action.disabledBackground';
+      case 'HOLIDAY': return 'background.warm';
       default: return 'background.warm';
     }
   };
@@ -881,64 +887,125 @@ export default function ContributionsPage() {
                   </Box>
                 )}
 
-                {/* Working Days Calendar */}
-                {workingDaysCalendar && workingDaysCalendar.workingDays?.length > 0 && (
-                  <Box sx={{ mt: 3 }}>
-                    <Typography sx={{ fontSize: 14, fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CalendarDays size={16} /> Working Days Calendar
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-                      {workingDaysCalendar.workingDays.map((day: any) => (
-                        <Tooltip
-                          key={day.date}
-                          title={`${formatDate(day.date, 'EEE, MMM dd')} — ${day.status}${day.amount ? ` (${formatCurrency(day.amount, debitAnalysis?.currency)})` : ''}`}
-                        >
-                          <Paper
-                            sx={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: '10px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              bgcolor: dayStatusBg(day.status),
-                              boxShadow: 'none',
-                              cursor: payDebitOpen && payDebitMode === 'bulk' && day.status === 'DEBIT' ? 'pointer' : 'default',
-                              border: bulkPayDates.includes(day.date) ? '2px solid' : 'none',
-                              borderColor: 'primary.main',
-                            }}
-                            onClick={() => {
-                              if (payDebitOpen && payDebitMode === 'bulk' && day.status === 'DEBIT') {
-                                handleToggleBulkDate(day.date);
-                              }
-                            }}
-                          >
-                            <Typography sx={{ fontSize: 10, fontWeight: 800, color: dayStatusColor(day.status) }}>
-                              {day.dayOfWeek?.substring(0, 2) || ''}
-                            </Typography>
-                            <Typography sx={{ fontSize: 11, fontWeight: 700, color: dayStatusColor(day.status) }}>
-                              {new Date(day.date).getDate()}
-                            </Typography>
-                          </Paper>
-                        </Tooltip>
-                      ))}
-                    </Box>
-                    <Stack direction="row" spacing={2} sx={{ mt: 1.5, flexWrap: 'wrap' }}>
-                      {[
-                        { label: 'Paid', color: 'success.main', bg: 'success.soft' },
-                        { label: 'Unpaid', color: 'warning.main', bg: 'warning.soft' },
-                        { label: 'Debit', color: 'error.main', bg: 'error.soft' },
-                        { label: 'Future', color: 'action.disabled', bg: 'action.disabledBackground' },
-                      ].map((legend) => (
-                        <Box key={legend.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                          <Box sx={{ width: 12, height: 12, borderRadius: '4px', bgcolor: legend.bg }} />
-                          <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{legend.label}</Typography>
+                {/* Working Days Calendar — month grid */}
+                {debitAnalysis?.dailyWorkingDayDetails && debitAnalysis.dailyWorkingDayDetails.length > 0 && (() => {
+                  const allDays = debitAnalysis.dailyWorkingDayDetails!;
+                  const DOW_LABEL = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                  const getWeekdayIndex = (isoDate: string) => {
+                    const [year, month, day] = isoDate.split('-').map(Number);
+                    const utcDay = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+                    return (utcDay + 6) % 7; // Convert Sun=0..Sat=6 to Mon=0..Sun=6
+                  };
+                  const getDayOfMonth = (isoDate: string) => Number(isoDate.split('-')[2]);
+                  const firstDow = getWeekdayIndex(allDays[0].date);
+                  const slots: (typeof allDays[0] | null)[] = [
+                    ...Array(firstDow).fill(null),
+                    ...allDays,
+                  ];
+                  const weeks: (typeof allDays[0] | null)[][] = [];
+                  for (let i = 0; i < slots.length; i += 7) {
+                    weeks.push(slots.slice(i, i + 7));
+                  }
+                  return (
+                    <Box sx={{ mt: 3 }}>
+                      <Typography sx={{ fontSize: 14, fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CalendarDays size={16} /> Monthly Calendar
+                      </Typography>
+
+                      {/* Legend */}
+                      <Stack direction="row" sx={{ mb: 1.5, flexWrap: 'wrap', gap: 1.5 }}>
+                        {[
+                          { label: 'Contributed', bg: 'success.soft' },
+                          { label: 'Missed', bg: 'error.soft' },
+                          { label: 'Future', bg: 'action.disabledBackground' },
+                          { label: 'Holiday', bg: 'background.warm' },
+                        ].map((l) => (
+                          <Box key={l.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <Box sx={{ width: 11, height: 11, borderRadius: '3px', bgcolor: l.bg, border: '1px solid', borderColor: 'divider' }} />
+                            <Typography sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 600 }}>{l.label}</Typography>
+                          </Box>
+                        ))}
+                      </Stack>
+
+                      {/* Day-of-week headers */}
+                      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5, mb: 0.5 }}>
+                        {DOW_LABEL.map((h) => (
+                          <Typography key={h} sx={{ fontSize: 10, fontWeight: 800, textAlign: 'center', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            {h}
+                          </Typography>
+                        ))}
+                      </Box>
+
+                      {/* Calendar weeks */}
+                      {weeks.map((week, wi) => (
+                        <Box key={wi} sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5, mb: 0.5 }}>
+                          {Array.from({ length: 7 }).map((_, di) => {
+                            const day = week[di] ?? null;
+                            if (!day) return <Box key={di} />;
+                            const weekdayLabel = DOW_LABEL[getWeekdayIndex(day.date)];
+                            const isMissed = day.status === 'MISSED';
+                            const isClickable = payDebitOpen && payDebitMode === 'bulk' && isMissed;
+                            const isSelected = bulkPayDates.includes(day.date);
+                            const amount = day.contributionAmount ?? day.debitAmount;
+                            return (
+                              <Tooltip
+                                key={day.date}
+                                arrow
+                                title={
+                                  day.status === 'HOLIDAY'
+                                    ? `${weekdayLabel}, ${formatDate(day.date, 'MMM dd')} — Holiday`
+                                    : day.status === 'FUTURE'
+                                    ? `${weekdayLabel}, ${formatDate(day.date, 'MMM dd')} — Future`
+                                    : `${weekdayLabel}, ${formatDate(day.date, 'MMM dd')} — ${day.status}${amount ? ` · ${formatCurrency(amount, day.currency ?? debitAnalysis?.currency)}` : ''}`
+                                }
+                              >
+                                <Paper
+                                  onClick={() => isClickable && handleToggleBulkDate(day.date)}
+                                  sx={{
+                                    borderRadius: '8px',
+                                    p: 0.5,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    minHeight: 56,
+                                    bgcolor: dayStatusBg(day.status),
+                                    boxShadow: 'none',
+                                    cursor: isClickable ? 'pointer' : 'default',
+                                    border: '1.5px solid',
+                                    borderColor: isSelected ? 'primary.main' : 'transparent',
+                                    transition: 'box-shadow 0.1s',
+                                    '&:hover': isClickable ? { boxShadow: 2 } : {},
+                                  }}
+                                >
+                                  <Typography sx={{ fontSize: 8, fontWeight: 700, color: 'text.secondary', lineHeight: 1, textTransform: 'uppercase' }}>
+                                    {weekdayLabel}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: 13, fontWeight: 800, color: dayStatusColor(day.status), lineHeight: 1.2 }}>
+                                    {getDayOfMonth(day.date)}
+                                  </Typography>
+                                  {day.status === 'CONTRIBUTED' && day.contributionAmount != null && (
+                                    <Typography sx={{ fontSize: 9, fontWeight: 700, color: 'success.main', mt: 0.25, textAlign: 'center', lineHeight: 1.1 }} noWrap>
+                                      +{formatCurrency(day.contributionAmount, day.currency ?? debitAnalysis?.currency)}
+                                    </Typography>
+                                  )}
+                                  {day.status === 'MISSED' && day.debitAmount != null && (
+                                    <Typography sx={{ fontSize: 9, fontWeight: 700, color: 'error.main', mt: 0.25, textAlign: 'center', lineHeight: 1.1 }} noWrap>
+                                      -{formatCurrency(day.debitAmount, day.currency ?? debitAnalysis?.currency)}
+                                    </Typography>
+                                  )}
+                                  {day.status === 'HOLIDAY' && (
+                                    <Typography sx={{ fontSize: 9, color: 'text.disabled', mt: 0.25 }}>off</Typography>
+                                  )}
+                                </Paper>
+                              </Tooltip>
+                            );
+                          })}
                         </Box>
                       ))}
-                    </Stack>
-                  </Box>
-                )}
+                    </Box>
+                  );
+                })()}
 
                 {/* Debit History */}
                 {debitHistory.length > 0 && (
@@ -1089,73 +1156,114 @@ export default function ContributionsPage() {
                                 </Box>
                               </Box>
 
-                              {/* Debit day details */}
-                              {defaulter.debitDayDetails && defaulter.debitDayDetails.length > 0 && (
-                                <Box>
-                                  <Typography sx={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'text.secondary', mb: 1.5 }}>
-                                    Missed days ({defaulter.debitDayDetails.length})
-                                  </Typography>
-                                  <Box
-                                    sx={{
-                                      display: 'grid',
-                                      gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                                      gap: 0.75,
-                                      maxHeight: 200,
-                                      overflowY: 'auto',
-                                      '&::-webkit-scrollbar': { width: 4 },
-                                      '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 2 },
-                                    }}
-                                  >
-                                    {defaulter.debitDayDetails.map((d: any) => (
-                                      <Box
-                                        key={d.debitDate}
-                                        sx={{
-                                          p: 1,
-                                          borderRadius: '10px',
-                                          border: '1px solid',
-                                          borderColor: 'divider',
-                                          display: 'flex',
-                                          flexDirection: 'column',
-                                          alignItems: 'center',
-                                        }}
-                                      >
-                                        <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'text.primary' }}>
-                                          {formatDate(d.debitDate, 'MMM dd')}
-                                        </Typography>
-                                        <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>
-                                          {d.dayOfWeek.slice(0, 3)}
-                                        </Typography>
-                                        <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'error.main', mt: 0.25 }}>
-                                          {formatCurrency(d.expectedAmount, d.expectedAmountCurrency)}
-                                        </Typography>
-                                      </Box>
-                                    ))}
-                                  </Box>
-                                </Box>
-                              )}
+                              {/* Paid dates & Missing dates — two columns */}
+                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
 
-                              {/* Contributions made */}
-                              {defaulter.contributions && defaulter.contributions.length > 0 && (
-                                <Box sx={{ mt: 2 }}>
-                                  <Typography sx={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'text.secondary', mb: 1 }}>
-                                    Contributions made ({defaulter.contributions.length})
+                                {/* Paid Dates */}
+                                <Box>
+                                  <Typography sx={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'success.main', mb: 1.25, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <CheckCircle2 size={13} />
+                                    Paid Dates ({defaulter.contributions?.length ?? 0})
                                   </Typography>
-                                  <Box sx={{ display: 'grid', gap: 0.75 }}>
-                                    {defaulter.contributions.map((c: any) => (
-                                      <Stack key={c.id} direction="row" spacing={1.5} sx={{ alignItems: 'center', p: 1, borderRadius: '10px', bgcolor: 'success.soft' }}>
-                                        <CheckCircle2 size={14} color="var(--mui-palette-success-main)" />
-                                        <Typography sx={{ fontSize: 13, fontWeight: 600, flex: 1 }}>
-                                          {formatDate(c.createdAt)} · {c.days} day{c.days > 1 ? 's' : ''}
-                                        </Typography>
-                                        <Chip label={c.status} size="small" color="success" sx={{ fontWeight: 700, fontSize: 11, height: 22 }} />
-                                        <Typography sx={{ fontSize: 14, fontWeight: 800, color: 'success.main' }}>
-                                          {formatCurrency(c.amount, c.currency)}
-                                        </Typography>
-                                      </Stack>
-                                    ))}
-                                  </Box>
+                                  {defaulter.contributions && defaulter.contributions.length > 0 ? (
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: 0.75,
+                                        maxHeight: 220,
+                                        overflowY: 'auto',
+                                        '&::-webkit-scrollbar': { width: 4 },
+                                        '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 2 },
+                                      }}
+                                    >
+                                      {defaulter.contributions.map((c: any) => (
+                                        <Box
+                                          key={c.id}
+                                          sx={{
+                                            p: 0.75,
+                                            px: 1.25,
+                                            borderRadius: '10px',
+                                            bgcolor: 'success.soft',
+                                            border: '1px solid',
+                                            borderColor: 'success.light',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: 0.15,
+                                          }}
+                                        >
+                                          <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'success.dark' }}>
+                                            {formatDate(c.contributionDate || c.createdAt, 'MMM dd')}
+                                          </Typography>
+                                          {c.days > 1 && (
+                                            <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>
+                                              {c.days} days
+                                            </Typography>
+                                          )}
+                                          <Typography sx={{ fontSize: 11, fontWeight: 800, color: 'success.main' }}>
+                                            {formatCurrency(c.amount, c.currency)}
+                                          </Typography>
+                                        </Box>
+                                      ))}
+                                    </Box>
+                                  ) : (
+                                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontStyle: 'italic' }}>No contributions recorded</Typography>
+                                  )}
                                 </Box>
-                              )}
+
+                                {/* Missing Dates */}
+                                <Box>
+                                  <Typography sx={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'error.main', mb: 1.25, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <XCircle size={13} />
+                                    Missing Dates ({defaulter.debitDayDetails?.length ?? 0})
+                                  </Typography>
+                                  {defaulter.debitDayDetails && defaulter.debitDayDetails.length > 0 ? (
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: 0.75,
+                                        maxHeight: 220,
+                                        overflowY: 'auto',
+                                        '&::-webkit-scrollbar': { width: 4 },
+                                        '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 2 },
+                                      }}
+                                    >
+                                      {defaulter.debitDayDetails.map((d: any) => (
+                                        <Box
+                                          key={d.debitDate}
+                                          sx={{
+                                            p: 0.75,
+                                            px: 1.25,
+                                            borderRadius: '10px',
+                                            bgcolor: 'error.soft',
+                                            border: '1px solid',
+                                            borderColor: 'error.light',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: 0.15,
+                                          }}
+                                        >
+                                          <Typography sx={{ fontSize: 11, fontWeight: 700, color: 'error.dark' }}>
+                                            {formatDate(d.debitDate, 'MMM dd')}
+                                          </Typography>
+                                          <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>
+                                            {d.dayOfWeek.slice(0, 3)}
+                                          </Typography>
+                                          <Typography sx={{ fontSize: 11, fontWeight: 800, color: 'error.main' }}>
+                                            {formatCurrency(d.expectedAmount, d.expectedAmountCurrency)}
+                                          </Typography>
+                                        </Box>
+                                      ))}
+                                    </Box>
+                                  ) : (
+                                    <Typography sx={{ fontSize: 12, color: 'text.secondary', fontStyle: 'italic' }}>No missing days</Typography>
+                                  )}
+                                </Box>
+
+                              </Box>
                             </Box>
                           </Collapse>
                         </Paper>

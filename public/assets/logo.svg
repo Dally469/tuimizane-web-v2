@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Tuimizane Logo</title>
+  <desc id="desc">Rounded square with interlocked paths and a warm orange accent.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EA580C"/>
+      <stop offset="100%" stop-color="#FB923C"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bg)"/>
+  <path d="M35 44h58a5 5 0 0 1 0 10H69v30a5 5 0 0 1-10 0V54H35a5 5 0 0 1 0-10z" fill="#fff"/>
+  <circle cx="96" cy="96" r="8" fill="#fff" fill-opacity="0.88"/>
+</svg>

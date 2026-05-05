@@ -1,5 +1,9 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import { ApiResponse, ApiError, AuthHeaders } from '@/types/api';
+import { store } from '@/store';
+import { logout } from '@/store/authSlice';
+
+let isSessionRedirecting = false;
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -40,13 +44,21 @@ class ApiClient {
       },
       (error: AxiosError<ApiResponse>) => {
         if (error.response?.status === 401) {
-          // Handle unauthorized - clear token and redirect to login
-          this.clearToken();
-          window.location.href = '/login';
+          this.handleSessionExpired();
         }
         return Promise.reject(this.handleError(error));
       }
     );
+  }
+
+  private handleSessionExpired(): void {
+    this.clearToken();
+    store.dispatch(logout());
+
+    if (typeof window !== 'undefined' && !isSessionRedirecting && window.location.pathname !== '/login') {
+      isSessionRedirecting = true;
+      window.location.replace('/login?reason=session_expired');
+    }
   }
 
   // Token management

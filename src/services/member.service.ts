@@ -34,10 +34,28 @@ export class MemberService {
     };
   }
 
-  async getAllMembers(): Promise<ApiResponse<MemberDTO[]>> {
+  /**
+   * Fetch paginated members
+   * @param page 0-based page index
+   * @param size page size
+   * @param sortBy field to sort by (default: 'names')
+   * @param sortDirection 'asc' or 'desc' (default: 'asc')
+   */
+  async getAllMembers({
+    page = 0,
+    size = 20,
+    sortBy = 'names',
+    sortDirection = 'asc',
+  }: {
+    page?: number;
+    size?: number;
+    sortBy?: string;
+    sortDirection?: 'asc' | 'desc';
+  } = {}): Promise<ApiResponse<{ content: MemberDTO[]; totalPages: number; totalElements: number; page: number; size: number }>> {
     try {
-      const response = await httpRequest.get('/members');
-      return this.unwrapResponse<MemberDTO[]>(response, 'Members retrieved successfully');
+      const url = `/members/paginated?page=${page}&size=${size}&sortBy=${sortBy}&sortDirection=${sortDirection}`;
+      const response = await httpRequest.get(url);
+      return this.unwrapResponse(response, 'Members retrieved successfully');
     } catch (error: any) {
       return { status: 500, success: false, message: error.message || 'Failed to get members' };
     }

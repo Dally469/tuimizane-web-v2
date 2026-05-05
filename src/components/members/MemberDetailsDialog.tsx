@@ -63,8 +63,6 @@ interface MemberDetailsDialogProps {
 const initials = (name: string) =>
   name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
-const dayLabel = (dow: string) => dow.charAt(0) + dow.slice(1).toLowerCase();
-
 export const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
   open,
   member,
@@ -469,14 +467,21 @@ export const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
                   {detail.dailyWorkingDayDetails && detail.dailyWorkingDayDetails.length > 0 && (() => {
                     const days = detail.dailyWorkingDayDetails!;
                     const weekDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const;
-                    const dowIndex = (dow: string) => weekDays.indexOf(dow.toUpperCase() as any);
+                    const weekdayFromIso = (isoDate: string) => {
+                      const [year, month, day] = isoDate.split('-').map(Number);
+                      const utcDay = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+                      // JS: Sun=0..Sat=6 -> Mon=0..Sun=6
+                      return (utcDay + 6) % 7;
+                    };
+                    const weekdayLabelFromIso = (isoDate: string) => weekDays[weekdayFromIso(isoDate)];
+                    const dayOfMonthFromIso = (isoDate: string) => Number(isoDate.split('-')[2]);
 
                     // Group days into calendar weeks
                     const weeks: (DailyWorkingDayDetail | null)[][] = [];
                     let currentWeek: (DailyWorkingDayDetail | null)[] = [];
 
                     // Pad the first week with nulls before the first day
-                    const firstDayIdx = dowIndex(days[0].dayOfWeek);
+                    const firstDayIdx = weekdayFromIso(days[0].date);
                     for (let i = 0; i < firstDayIdx; i++) currentWeek.push(null);
 
                     for (const day of days) {
@@ -543,13 +548,14 @@ export const MemberDetailsDialog: React.FC<MemberDetailsDialogProps> = ({
                                   return <Box key={di} sx={{ p: 1, minHeight: 64, bgcolor: '#fafafa' }} />;
                                 }
                                 const sc = statusColor(day.status);
-                                const dayNum = new Date(day.date).getDate();
+                                const dayNum = dayOfMonthFromIso(day.date);
+                                const weekdayLabel = weekdayLabelFromIso(day.date);
                                 return (
                                   <Tooltip
                                     key={di}
                                     title={
                                       <Box>
-                                        <Typography variant="caption" sx={{ fontWeight: 700 }}>{day.date} ({dayLabel(day.dayOfWeek)})</Typography>
+                                        <Typography variant="caption" sx={{ fontWeight: 700 }}>{day.date} ({weekdayLabel})</Typography>
                                         <br />
                                         <Typography variant="caption">Status: {day.status}</Typography>
                                         {day.contributionAmount != null && <><br /><Typography variant="caption">Contributed: {formatCurrency(day.contributionAmount, day.currency || detail.memberCurrency)}</Typography></>}

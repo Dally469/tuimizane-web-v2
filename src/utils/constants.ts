@@ -34,6 +34,7 @@ export const API_ENDPOINTS = {
   },
   MEMBERS: {
     BASE: '/api/members',
+    PAGINATED: '/api/members/paginated',
     UPLOAD: '/api/members/upload',
     ADD_MEMBER: '/api/members/add-member',
     ASSIGN_CARD: (memberId: string) => `/api/members/${memberId}/assign-card`,
