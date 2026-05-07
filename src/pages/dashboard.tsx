@@ -53,7 +53,7 @@ export default function Dashboard() {
       detail: `${activeMembers} active · ${statistics?.inactiveMembers ?? 0} inactive`,
       icon: Users2,
       tone: 'primary.main',
-      bg: 'linear-gradient(135deg, rgba(249,115,22,0.12), rgba(255,237,213,0.7))',
+      bg: 'linear-gradient(135deg, rgba(0,70,110,0.12), rgba(231,242,248,0.88))',
     },
     {
       label: 'Active seasons',
@@ -61,7 +61,7 @@ export default function Dashboard() {
       detail: `${scheduledSeasonCount} scheduled · Wk ${completedWeeks}/${seasonWeeks}`,
       icon: Layers3,
       tone: 'secondary.main',
-      bg: 'linear-gradient(135deg, rgba(251,146,60,0.14), rgba(255,244,237,0.9))',
+      bg: 'linear-gradient(135deg, rgba(242,169,0,0.16), rgba(255,246,221,0.95))',
     },
     {
       label: 'Total contributions',
@@ -69,7 +69,7 @@ export default function Dashboard() {
       detail: `${statistics?.totalContributions ?? 0} entries · Avg ${formatCurrency(statistics?.averageContributionPerMember ?? 0, currency)}/member`,
       icon: CircleDollarSign,
       tone: 'warning.main',
-      bg: 'linear-gradient(135deg, rgba(245,158,11,0.16), rgba(255,247,237,0.9))',
+      bg: 'linear-gradient(135deg, rgba(242,169,0,0.2), rgba(255,249,236,0.95))',
     },
     {
       label: 'Compliance rate',
@@ -100,7 +100,7 @@ export default function Dashboard() {
               borderRadius: '24px',
               p: { xs: 3.5, sm: 4.5 },
               color: 'white',
-              background: 'linear-gradient(150deg, #2f1d11 0%, #9a3412 42%, #f97316 100%)',
+              background: 'linear-gradient(150deg, #04283a 0%, #00466e 48%, #1e6f96 100%)',
             }}
           >
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', xl: 'row' }, gap: 3, justifyContent: 'space-between' }}>
@@ -202,7 +202,7 @@ export default function Dashboard() {
                 mt: 2,
                 p: 2.5,
                 borderRadius: '16px',
-                background: 'linear-gradient(135deg, #7c2d12, #f97316)',
+                background: 'linear-gradient(135deg, #003a5b, #1e6f96)',
                 color: 'white',
                 boxShadow: 'none',
               }}

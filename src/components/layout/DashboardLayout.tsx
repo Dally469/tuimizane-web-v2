@@ -77,18 +77,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             height: 58,
             borderRadius: '10px',
             flexShrink: 0,
-            boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)',
+            boxShadow: '0 4px 12px rgba(0, 70, 110, 0.28)',
           }}
         />
         <Box>
           <Typography sx={{
-            fontSize: 15, fontWeight: 700,
+            fontSize: 15, fontWeight: 900,
             color: '#1f2937', letterSpacing: '-0.01em',
           }}>
-            Tuimizane
+            Tuimizane Business
           </Typography>
-          <Typography sx={{ fontSize: 10, color: '#9ca3af', fontWeight: 500 }}>
-            Portal
+          <Typography sx={{ fontSize: 10, color: '#EEB508', fontWeight: 800 }}>
+            OBJECT-LONG
           </Typography>
         </Box>
       </Box>
@@ -107,21 +107,21 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   position: 'relative',
                   transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   background: isActive
-                    ? 'linear-gradient(135deg, rgba(234, 88, 12, 0.12), rgba(251, 146, 60, 0.08))'
+                    ? 'linear-gradient(135deg, rgba(0, 70, 110, 0.14), rgba(30, 111, 150, 0.08))'
                     : 'transparent',
-                  border: isActive ? '1px solid rgba(234, 88, 12, 0.2)' : '1px solid transparent',
+                  border: isActive ? '1px solid rgba(0, 70, 110, 0.22)' : '1px solid transparent',
                   '&::before': isActive ? {
                     content: '""',
                     position: 'absolute',
                     left: 0, top: '50%',
                     transform: 'translateY(-50%)',
                     width: 3.5, height: 20,
-                    background: '#ea580c',
+                    background: '#00466e',
                     borderRadius: '0 3px 3px 0',
                   } : {},
                   '&:hover': {
                     background: isActive
-                      ? 'linear-gradient(135deg, rgba(234, 88, 12, 0.12), rgba(251, 146, 60, 0.08))'
+                      ? 'linear-gradient(135deg, rgba(0, 70, 110, 0.14), rgba(30, 111, 150, 0.08))'
                       : 'rgba(0,0,0,0.04)',
                     transform: 'translateX(2px)',
                   },
@@ -129,7 +129,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               >
                 <ListItemIcon sx={{
                   minWidth: 38,
-                  color: isActive ? '#ea580c' : '#6b7280',
+                  color: isActive ? '#00466e' : '#6b7280',
                 }}>
                   {item.icon}
                 </ListItemIcon>
@@ -201,11 +201,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           {/* Header */}
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: '10px', background: '#f3f4f6' }}>
-              {title === 'Dashboard' && <LayoutDashboard size={20} color="#ea580c" />}
-              {title === 'Members' && <Users2 size={20} color="#ea580c" />}
-              {title === 'Contributions' && <CreditCard size={20} color="#ea580c" />}
-              {title === 'Seasons' && <CalendarDays size={20} color="#ea580c" />}
-              {title === 'Settings' && <Settings size={20} color="#ea580c" />}
+                {title === 'Dashboard' && <LayoutDashboard size={20} color="#00466e" />}
+                {title === 'Members' && <Users2 size={20} color="#00466e" />}
+                {title === 'Contributions' && <CreditCard size={20} color="#00466e" />}
+                {title === 'Seasons' && <CalendarDays size={20} color="#00466e" />}
+                {title === 'Settings' && <Settings size={20} color="#00466e" />}
             </Box>
             <Box>
               <Typography sx={{
@@ -234,7 +234,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             }}>
               <Badge
                 variant="dot"
-                sx={{ '& .MuiBadge-dot': { background: '#ea580c', width: 6, height: 6, top: -4, right: -4 } }}
+                sx={{ '& .MuiBadge-dot': { background: '#f2a900', width: 6, height: 6, top: -4, right: -4 } }}
               >
                 <Bell size={16} />
               </Badge>
@@ -252,7 +252,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 }}>
                   <Avatar sx={{
                     width: 32, height: 32,
-                    background: 'linear-gradient(135deg, #ea580c, #fb923c)',
+                    background: 'linear-gradient(135deg, #003a5b, #1e6f96)',
                     fontSize: 12, fontWeight: 600, color: 'white',
                   }}>
                     {user.username.charAt(0).toUpperCase()}

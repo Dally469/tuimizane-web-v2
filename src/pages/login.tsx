@@ -81,8 +81,8 @@ export default function Login() {
   return (
     <Box className="relative min-h-screen overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
       <Box className="absolute inset-0 -z-10">
-        <Box className="absolute left-[-8%] top-12 h-72 w-72 rounded-full bg-orange-200/50 blur-3xl" />
-        <Box className="absolute right-[-8%] top-0 h-80 w-80 rounded-full bg-amber-100/70 blur-3xl" />
+        <Box className="absolute left-[-8%] top-12 h-72 w-72 rounded-full bg-sky-200/50 blur-3xl" />
+        <Box className="absolute right-[-8%] top-0 h-80 w-80 rounded-full bg-yellow-100/70 blur-3xl" />
         <Box className="absolute inset-0 bg-hero-grid bg-size-[38px_38px] opacity-[0.04]" />
       </Box>
 
@@ -131,7 +131,7 @@ export default function Login() {
                               '--target-width': metric.width,
                               height: '100%',
                               borderRadius: 999,
-                              background: 'linear-gradient(90deg, #ea580c 0%, #fb923c 100%)',
+                              background: 'linear-gradient(90deg, #00466e 0%, #1e6f96 72%, #f2a900 100%)',
                               animationName: 'fillTrack',
                               animationDuration: '1.1s',
                               animationDelay: metric.delay,
@@ -149,7 +149,7 @@ export default function Login() {
               <Card
                 sx={{
                   borderRadius: '18px',
-                  background: 'linear-gradient(160deg, #2f1d11 0%, #7c2d12 58%, #ea580c 100%)',
+                  background: 'linear-gradient(160deg, #062b3d 0%, #00466e 58%, #1e6f96 100%)',
                   color: 'white',
                   '@keyframes pulseDot': {
                     '0%': { transform: 'scale(1)', opacity: 0.9 },
@@ -184,7 +184,7 @@ export default function Login() {
                                 width: 10,
                                 height: 10,
                                 borderRadius: '50%',
-                                bgcolor: item.status === 'done' ? '#fdba74' : item.status === 'active' ? '#fef3c7' : 'rgba(255,255,255,0.42)',
+                                bgcolor: item.status === 'done' ? '#f2a900' : item.status === 'active' ? '#fde68a' : 'rgba(255,255,255,0.42)',
                               }}
                             />
                             {item.status === 'active' && (
@@ -193,7 +193,7 @@ export default function Login() {
                                   position: 'absolute',
                                   inset: 0,
                                   borderRadius: '50%',
-                                  border: '2px solid #fef3c7',
+                                  border: '2px solid #fde68a',
                                   animation: 'pulseDot 1.8s infinite',
                                 }}
                               />

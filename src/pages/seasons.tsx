@@ -420,7 +420,7 @@ export default function SeasonsPage() {
                 sx={{
                   borderRadius: '24px',
                   p: 3.5,
-                  background: 'linear-gradient(150deg, #7c2d12 0%, #f97316 100%)',
+                  background: 'linear-gradient(150deg, #04283a 0%, #00466e 58%, #1e6f96 100%)',
                   color: 'white',
                   display: 'flex',
                   flexDirection: 'column',

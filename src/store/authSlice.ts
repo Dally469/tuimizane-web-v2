@@ -38,6 +38,7 @@ const authSlice = createSlice({
       state.error = null;
       if (typeof window !== 'undefined') {
         localStorage.setItem('auth_token', action.payload.token);
+        document.cookie = `auth_token=${encodeURIComponent(action.payload.token)}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
       }
     },
     loginFailure: (state, action: PayloadAction<string>) => {
@@ -51,6 +52,7 @@ const authSlice = createSlice({
       state.error = null;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('auth_token');
+        document.cookie = 'auth_token=; path=/; max-age=0; samesite=lax';
       }
     },
     setToken: (state, action: PayloadAction<string | null>) => {
@@ -64,6 +66,9 @@ const authSlice = createSlice({
         const token = localStorage.getItem('auth_token');
         if (token) {
           state.token = token;
+          document.cookie = `auth_token=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
+        } else {
+          document.cookie = 'auth_token=; path=/; max-age=0; samesite=lax';
         }
       }
     },
