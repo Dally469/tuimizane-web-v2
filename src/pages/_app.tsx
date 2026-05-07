@@ -1,5 +1,6 @@
 import React from 'react';
 import type { AppProps } from 'next/app';
+import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { Provider } from 'react-redux';
 import { CssBaseline, ThemeProvider } from '@mui/material';
@@ -86,6 +87,10 @@ export default function App({ Component, pageProps }: AppProps) {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={appTheme}>
+          <Head>
+            <link rel="icon" href="/assets/logo.png" type="image/png" />
+            <link rel="apple-touch-icon" href="/assets/logo.png" />
+          </Head>
           <CssBaseline />
           <SessionGuard />
           <Component {...pageProps} />
