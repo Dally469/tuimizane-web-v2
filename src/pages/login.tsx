@@ -35,10 +35,10 @@ export default function Login() {
   ];
 
   const seasonPayouts = [
-    { label: 'Week 1', amount: 'TZS 240,000', status: 'done' },
-    { label: 'Week 2', amount: 'TZS 240,000', status: 'done' },
-    { label: 'Week 3', amount: 'TZS 240,000', status: 'active' },
-    { label: 'Week 4', amount: 'TZS 240,000', status: 'next' },
+    { label: 'Week 1', amount: 'USD 240,000', status: 'done' },
+    { label: 'Week 2', amount: 'USD 240,000', status: 'done' },
+    { label: 'Week 3', amount: 'USD 240,000', status: 'active' },
+    { label: 'Week 4', amount: 'USD 240,000', status: 'next' },
   ] as const;
 
   const canSubmit = Boolean(formData.username && formData.password) && !isLoading;
