@@ -43,7 +43,7 @@ import { MemberForm } from '@/components/members/MemberForm';
 import { MemberDetailsDialog } from '@/components/members/MemberDetailsDialog';
 import { useMembers } from '@/hooks';
 import { formatCurrency, formatDate, formatMemberType, formatPhoneNumber } from '@/utils/format';
-import { MEMBER_STATUS, MEMBER_TYPE, API_ENDPOINTS } from '@/utils/constants';
+import { MEMBER_STATUS } from '@/utils/constants';
 import type { MemberDTO } from '@/types/api';
 
 type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
@@ -56,6 +56,9 @@ const initials = (name: string) =>
     .map((w) => w[0])
     .join('')
     .toUpperCase();
+
+  const isActiveMember = (status: string) => status === MEMBER_STATUS.ACTIVE;
+  const isInactiveMember = (status: string) => status === MEMBER_STATUS.INACTIVE;
 
 export default function MembersPage() {
   const {
@@ -99,14 +102,14 @@ export default function MembersPage() {
   }, [page, pageSize, fetchMembers]);
 
   // --- Derived data ---
-  const activeCount = safeMembers.filter((m) => Number(m.status) === 1).length;
-  const inactiveCount = safeMembers.filter((m) => Number(m.status) === 0).length;
+  const activeCount = safeMembers.filter((m) => isActiveMember(m.status)).length;
+  const inactiveCount = safeMembers.filter((m) => isInactiveMember(m.status)).length;
   const totalContribution = safeMembers.reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
 
   const filteredMembers = safeMembers.filter((member) => {
     // Tabbed status filtering (Active/Inactive)
-    if (tabStatus === 1 && Number(member.status) !== 1) return false;
-    if (tabStatus === 0 && Number(member.status) !== 0) return false;
+    if (tabStatus === 1 && !isActiveMember(member.status)) return false;
+    if (tabStatus === 0 && !isInactiveMember(member.status)) return false;
     // If typeFilter is 'ALL', show all Vision types for the status
     if (typeFilter !== 'ALL' && member.type !== typeFilter) return false;
     if (!query) return true;
@@ -342,7 +345,7 @@ export default function MembersPage() {
                       sx={{
                         width: 48,
                         height: 48,
-                        bgcolor: Number(member.status) === 1 ? 'success.main' : 'warning.main',
+                        bgcolor: isActiveMember(member.status) ? 'success.main' : 'warning.main',
                         fontSize: 16,
                         fontWeight: 800,
                         flexShrink: 0,
@@ -358,16 +361,16 @@ export default function MembersPage() {
                       <Stack direction="row" spacing={0.5} sx={{ mt: 0.75, flexWrap: 'wrap', gap: 0.5 }}>
                         <Chip
                           label={
-                            Number(member.status) === 0 ? 'Inactive' :
-                            Number(member.status) === 1 ? 'Active' :
+                            isInactiveMember(member.status) ? 'Inactive' :
+                            isActiveMember(member.status) ? 'Active' :
                            
                             'Unknown'
                           }
                           size="small"
                           variant="outlined"
                           color={
-                            Number(member.status) === 0 ? 'secondary' :
-                            Number(member.status) === 1 ? 'success' :
+                            isInactiveMember(member.status) ? 'secondary' :
+                            isActiveMember(member.status) ? 'success' :
                             'default'
                           }
                           sx={{ fontWeight: 700 }}

@@ -108,8 +108,9 @@ export const CONTRIBUTION_STATUS = {
 } as const;
 
 export const MEMBER_STATUS = {
-  ACTIVE: 1,
-  INACTIVE: 0,
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  SUSPENDED: 'SUSPENDED',
 } as const;
 
 export const MEMBER_TYPE = {

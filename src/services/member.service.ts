@@ -8,6 +8,7 @@ import {
   MemberContributionResponseDTO,
   TopDefaulterDTO,
 } from '@/types/api';
+import { MEMBER_STATUS } from '@/utils/constants';
 
 export class MemberService {
   // UUID validation regex
@@ -34,6 +35,55 @@ export class MemberService {
     };
   }
 
+  private normalizeMemberStatus(status: unknown): string {
+    if (typeof status === 'number') {
+      return status === 1 ? MEMBER_STATUS.ACTIVE : status === 0 ? MEMBER_STATUS.INACTIVE : String(status);
+    }
+
+    const normalizedStatus = String(status ?? '').trim().toUpperCase();
+
+    if (normalizedStatus === '1' || normalizedStatus === MEMBER_STATUS.ACTIVE) {
+      return MEMBER_STATUS.ACTIVE;
+    }
+
+    if (normalizedStatus === '0' || normalizedStatus === MEMBER_STATUS.INACTIVE) {
+      return MEMBER_STATUS.INACTIVE;
+    }
+
+    if (normalizedStatus === MEMBER_STATUS.SUSPENDED) {
+      return MEMBER_STATUS.SUSPENDED;
+    }
+
+    return normalizedStatus;
+  }
+
+  private normalizeMember<T extends Member | MemberDTO>(member: T): T {
+    const normalizedType =
+      typeof member.type === 'string' ? Number.parseInt(member.type, 10) : member.type;
+
+    return {
+      ...member,
+      status: this.normalizeMemberStatus(member.status),
+      type: Number.isNaN(normalizedType) ? member.type : normalizedType,
+      organizationId:
+        member.organizationId ?? (member as T & { organization_id?: string }).organization_id ?? '',
+    } as T;
+  }
+
+  private normalizeMemberListResponse(
+    data: { content?: MemberDTO[]; totalPages?: number; totalElements?: number; page?: number; size?: number; pageNumber?: number; pageSize?: number } | undefined
+  ) {
+    const content = Array.isArray(data?.content) ? data.content.map((member) => this.normalizeMember(member)) : [];
+
+    return {
+      content,
+      totalPages: data?.totalPages ?? 1,
+      totalElements: data?.totalElements ?? content.length,
+      page: data?.page ?? data?.pageNumber ?? 0,
+      size: data?.size ?? data?.pageSize ?? content.length,
+    };
+  }
+
   /**
    * Fetch paginated members
    * @param page 0-based page index
@@ -54,8 +104,15 @@ export class MemberService {
   } = {}): Promise<ApiResponse<{ content: MemberDTO[]; totalPages: number; totalElements: number; page: number; size: number }>> {
     try {
       const url = `/members/paginated?page=${page}&size=${size}&sortBy=${sortBy}&sortDirection=${sortDirection}`;
-      const response = await httpRequest.get(url);
-      return this.unwrapResponse(response, 'Members retrieved successfully');
+      const response = this.unwrapResponse(
+        await httpRequest.get(url),
+        'Members retrieved successfully'
+      );
+
+      return {
+        ...response,
+        data: this.normalizeMemberListResponse(response.data),
+      };
     } catch (error: any) {
       return { status: 500, success: false, message: error.message || 'Failed to get members' };
     }
@@ -67,8 +124,15 @@ export class MemberService {
       throw new Error('Invalid member ID: must be a valid UUID');
     }
     try {
-      const response = await httpRequest.get(`/members/${id}`);
-      return this.unwrapResponse<Member>(response, 'Member retrieved successfully');
+      const response = this.unwrapResponse<Member>(
+        await httpRequest.get(`/members/${id}`),
+        'Member retrieved successfully'
+      );
+
+      return {
+        ...response,
+        data: response.data ? this.normalizeMember(response.data) : response.data,
+      };
     } catch (error: any) {
       return { status: 404, success: false, message: error.message || 'Failed to get member' };
     }
@@ -77,8 +141,15 @@ export class MemberService {
   // Create new member
   async createMember(member: Partial<Member>, months: number): Promise<ApiResponse<Member>> {
     try {
-      const response = await httpRequest.post(`/members/add-member?months=${months}`, member);
-      return this.unwrapResponse<Member>(response, 'Member created successfully');
+      const response = this.unwrapResponse<Member>(
+        await httpRequest.post(`/members/add-member?months=${months}`, member),
+        'Member created successfully'
+      );
+
+      return {
+        ...response,
+        data: response.data ? this.normalizeMember(response.data) : response.data,
+      };
     } catch (error: any) {
       return { status: 400, success: false, message: error.message || 'Failed to create member' };
     }
@@ -87,8 +158,15 @@ export class MemberService {
   // Update member
   async updateMember(id: string, memberDetails: Partial<Member>): Promise<ApiResponse<Member>> {
     try {
-      const response = await httpRequest.put(`/members/${id}`, memberDetails);
-      return this.unwrapResponse<Member>(response, 'Member updated successfully');
+      const response = this.unwrapResponse<Member>(
+        await httpRequest.put(`/members/${id}`, memberDetails),
+        'Member updated successfully'
+      );
+
+      return {
+        ...response,
+        data: response.data ? this.normalizeMember(response.data) : response.data,
+      };
     } catch (error: any) {
       return { status: 400, success: false, message: error.message || 'Failed to update member' };
     }
@@ -130,8 +208,15 @@ export class MemberService {
   // Assign card to member
   async assignCard(memberId: string, request: AssignCardRequest): Promise<ApiResponse<Member>> {
     try {
-      const response = await httpRequest.put(`/members/${memberId}/assign-card`, request);
-      return this.unwrapResponse<Member>(response, 'Card assigned successfully');
+      const response = this.unwrapResponse<Member>(
+        await httpRequest.put(`/members/${memberId}/assign-card`, request),
+        'Card assigned successfully'
+      );
+
+      return {
+        ...response,
+        data: response.data ? this.normalizeMember(response.data) : response.data,
+      };
     } catch (error: any) {
       return { status: 400, success: false, message: error.message || 'Failed to assign card' };
     }
@@ -140,8 +225,15 @@ export class MemberService {
   // Unassign card from member
   async unassignCard(memberId: string): Promise<ApiResponse<Member>> {
     try {
-      const response = await httpRequest.put(`/members/${memberId}/unassign-card`);
-      return this.unwrapResponse<Member>(response, 'Card unassigned successfully');
+      const response = this.unwrapResponse<Member>(
+        await httpRequest.put(`/members/${memberId}/unassign-card`),
+        'Card unassigned successfully'
+      );
+
+      return {
+        ...response,
+        data: response.data ? this.normalizeMember(response.data) : response.data,
+      };
     } catch (error: any) {
       return { status: 400, success: false, message: error.message || 'Failed to unassign card' };
     }
@@ -150,8 +242,15 @@ export class MemberService {
   // Find member by card number
   async findMemberByCard(cardNumber: string): Promise<ApiResponse<Member>> {
     try {
-      const response = await httpRequest.get(`/members/find-by-card/${cardNumber}`);
-      return this.unwrapResponse<Member>(response, 'Member found successfully');
+      const response = this.unwrapResponse<Member>(
+        await httpRequest.get(`/members/find-by-card/${cardNumber}`),
+        'Member found successfully'
+      );
+
+      return {
+        ...response,
+        data: response.data ? this.normalizeMember(response.data) : response.data,
+      };
     } catch (error: any) {
       return { status: 404, success: false, message: error.message || 'Failed to find member by card' };
     }
@@ -251,8 +350,17 @@ export class MemberService {
     const queryString = `?${params.join('&')}`;
     
     try {
-      const response = await httpRequest.get(`/members/search${queryString}`);
-      return this.unwrapResponse<MemberDTO[]>(response, 'Members searched successfully');
+      const response = this.unwrapResponse<MemberDTO[]>(
+        await httpRequest.get(`/members/search${queryString}`),
+        'Members searched successfully'
+      );
+
+      return {
+        ...response,
+        data: Array.isArray(response.data)
+          ? response.data.map((member) => this.normalizeMember(member))
+          : response.data,
+      };
     } catch (error: any) {
       return { status: 500, success: false, message: error.message || 'Failed to search members' };
     }
