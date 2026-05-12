@@ -9,10 +9,12 @@ import {
   Checkbox,
   Chip,
   FormControlLabel,
+  IconButton,
+  InputAdornment,
   TextField,
   Typography,
 } from '@mui/material';
-import { ArrowRight, BarChart3, CalendarDays, ShieldCheck, Wallet } from 'lucide-react';
+import { ArrowRight, BarChart3, CalendarDays, Eye, EyeOff, ShieldCheck, Wallet } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginStart, loginSuccess, loginFailure } from '@/store/authSlice';
 import { LoginRequest } from '@/types/api';
@@ -27,6 +29,7 @@ export default function Login() {
     username: '',
     password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const contributionMetrics = [
     { label: 'Collected this week', value: '82%', width: '82%', delay: '0.1s' },
@@ -282,12 +285,28 @@ export default function Login() {
                   <TextField
                     id="password"
                     label="Password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
                     placeholder="Enter your password"
                     helperText="Passwords are case-sensitive."
                     fullWidth
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label={showPassword ? 'Hide password' : 'Show password'}
+                              onClick={() => setShowPassword((prev) => !prev)}
+                              edge="end"
+                              size="small"
+                            >
+                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
                   />
 
                   {error && <Alert severity="error">{error}</Alert>}
